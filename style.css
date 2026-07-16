@@ -14,6 +14,48 @@
   html,body{ margin:0; height:100%; background:var(--ink); overflow:hidden; }
   #map{ position:absolute; inset:0; z-index:0; background:#0e1113; }
 
+  /* ============ ACCESSIBILITY ============ */
+
+  /* Available to screen readers, invisible on screen. Used for the page h1 and
+     for the labels on controls whose purpose is obvious visually (the
+     Directions selects, the modal inputs) but which were otherwise unnamed. */
+  .visually-hidden{
+    position:absolute; width:1px; height:1px; margin:-1px; padding:0;
+    overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0;
+  }
+
+  /* The map swallows a lot of tab stops, so offer a way past it. Visible only
+     when focused. */
+  .skip-link{
+    position:absolute; top:0; left:50%; transform:translate(-50%, -120%);
+    z-index:3000; background:var(--accent); color:#0d1414;
+    padding:10px 16px; border-radius:0 0 8px 8px; font-size:13px; font-weight:700;
+    text-decoration:none; transition:transform .15s ease;
+  }
+  .skip-link:focus{ transform:translate(-50%, 0); }
+
+  .field-help{ font-size:12px; color:var(--text-dim); margin-bottom:8px; }
+
+  /* No focus indicator was defined anywhere, so keyboard users navigated an
+     invisible cursor — the UA default outline is also nearly unreadable against
+     these dark panels. :focus-visible keeps it off for mouse clicks. */
+  :focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+    border-radius:4px;
+  }
+  .leaflet-container :focus-visible{ outline-offset:0; }
+
+  /* Respect a user's reduced-motion preference. */
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation-duration:0.01ms !important;
+      animation-iteration-count:1 !important;
+      transition-duration:0.01ms !important;
+      scroll-behavior:auto !important;
+    }
+  }
+
   /* Top bar: site toggle */
   .topbar{
     position:absolute; top:14px; left:50%; transform:translateX(-50%);
@@ -199,9 +241,12 @@
   /* pulsing crosshair cursor helper */
   .drawing-cursor{ cursor:crosshair !important; }
 
-  /* Panel collapse toggle (mobile only) */
+  /* Panel collapse toggle (mobile only).
+     This and .sidebar-toggle are <button>s rather than <div>s so they are
+     focusable and announced; the resets below keep them looking identical. */
   .panel-toggle{
     display:none;
+    appearance:none; font-family:inherit;
   }
 
   /* ---- Desktop sidebar hide/show ---- */
@@ -218,6 +263,7 @@
     display:flex; align-items:center; justify-content:center; background:var(--panel);
     border:1px solid var(--line); border-radius:10px; color:#dbe3e8; font-size:16px;
     cursor:pointer; box-shadow:0 6px 20px rgba(0,0,0,0.35);
+    appearance:none; font-family:inherit; padding:0;
   }
   .sidebar-toggle:hover{ border-color:var(--accent); }
 

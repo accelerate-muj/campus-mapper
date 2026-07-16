@@ -315,16 +315,28 @@
   const panelToggle = document.getElementById('panelToggle');
   const isSmallScreen = () => window.matchMedia('(max-width: 680px)').matches;
 
+  // The arrow is decorative — it must stay wrapped in aria-hidden, and the real
+  // state has to travel on aria-expanded. Writing innerHTML directly here used
+  // to drop that wrapper, leaving the button announced as "up pointing
+  // triangle" with no indication of what it does or whether it is open.
+  function renderPanelToggle(){
+    const collapsed = toolPanel.classList.contains('collapsed');
+    panelToggle.innerHTML = '<span aria-hidden="true">' + (collapsed ? '&#9650;' : '&#9660;') + '</span>';
+    panelToggle.setAttribute('aria-expanded', String(!collapsed));
+    panelToggle.setAttribute('aria-label', collapsed ? 'Expand panel' : 'Collapse panel');
+  }
+
   panelToggle.addEventListener('click', function(){
     toolPanel.classList.toggle('collapsed');
-    panelToggle.innerHTML = toolPanel.classList.contains('collapsed') ? '&#9650;' : '&#9660;';
+    renderPanelToggle();
   });
   if(isSmallScreen()) toolPanel.classList.add('collapsed');
+  renderPanelToggle();
 
   function expandPanelOnMobile(){
     if(isSmallScreen() && toolPanel.classList.contains('collapsed')){
       toolPanel.classList.remove('collapsed');
-      panelToggle.innerHTML = '&#9660;';
+      renderPanelToggle();
     }
   }
 
@@ -2014,6 +2026,10 @@
     currentSite = site;
     tabCollege.classList.toggle('active', site === 'college');
     tabHostel.classList.toggle('active', site === 'hostel');
+    // Keep aria-pressed honest: the active tab is conveyed by colour alone
+    // otherwise, which says nothing to a screen reader.
+    tabCollege.setAttribute('aria-pressed', String(site === 'college'));
+    tabHostel.setAttribute('aria-pressed', String(site === 'hostel'));
 
     renderBoundary();
     renderPaths();
@@ -2044,19 +2060,36 @@
   const sidebarTabs = document.querySelectorAll('.sidebar-tab');
   const tabPanels = document.querySelectorAll('.tab-panel');
 
-  sidebarTabs.forEach(function(tab){
-    tab.addEventListener('click', function(){
-      const targetTab = tab.getAttribute('data-tab');
-      sidebarTabs.forEach(function(t){ t.classList.remove('active'); });
-      tab.classList.add('active');
-      tabPanels.forEach(function(panel){ panel.classList.remove('active'); });
-      if(targetTab === 'map'){
-        document.getElementById('mapPanel').classList.add('active');
-      } else {
-        document.getElementById('directionsPanel').classList.add('active');
-      }
+  function selectSidebarTab(tab){
+    const targetTab = tab.getAttribute('data-tab');
+
+    sidebarTabs.forEach(function(t){
+      const isActive = t === tab;
+      t.classList.toggle('active', isActive);
+      // Which tab is selected was conveyed by background colour alone.
+      t.setAttribute('aria-selected', String(isActive));
+      // Roving tabindex: arrow keys move between tabs, Tab leaves the tablist.
+      t.setAttribute('tabindex', isActive ? '0' : '-1');
+    });
+
+    tabPanels.forEach(function(panel){ panel.classList.remove('active'); });
+    document.getElementById(targetTab === 'map' ? 'mapPanel' : 'directionsPanel').classList.add('active');
+  }
+
+  sidebarTabs.forEach(function(tab, index){
+    tab.addEventListener('click', function(){ selectSidebarTab(tab); });
+
+    // Arrow-key navigation is the expected behaviour for a tablist.
+    tab.addEventListener('keydown', function(e){
+      if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      const next = sidebarTabs[(index + (e.key === 'ArrowRight' ? 1 : -1) + sidebarTabs.length) % sidebarTabs.length];
+      selectSidebarTab(next);
+      next.focus();
     });
   });
+
+  selectSidebarTab(document.querySelector('.sidebar-tab.active') || sidebarTabs[0]);
 
   // ================= INIT =================
   // The panel is now always a pure view (Directions + Buildings); there's

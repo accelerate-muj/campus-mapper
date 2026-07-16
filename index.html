@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Campus Mapper</title>
+<!-- Tells the browser to render form controls and scrollbars to match the
+     active theme; without it the UA paints light-mode widgets on a dark panel. -->
+<meta name="color-scheme" content="dark light">
+<title>Campus Mapper — Manipal University Jaipur</title>
 <!--
   Third-party assets are pinned to an exact version and carry an SRI hash, so a
   compromised or swapped CDN file is rejected by the browser rather than run.
@@ -23,51 +26,61 @@
 </head>
 <body>
 
-<div id="map"></div>
+<!-- The map is the whole page, so there was no heading and no landmark for a
+     screen reader to orient by. The h1 is visually hidden, not removed. -->
+<h1 class="visually-hidden">Campus Mapper — Manipal University Jaipur</h1>
 
-<div class="topbar">
-  <button id="tabCollege" class="active">College</button>
-  <button id="tabHostel">Hostel</button>
-</div>
+<a href="#dirFrom" class="skip-link">Skip to directions</a>
+
+<div id="map" role="application" aria-label="Campus map. Interactive map of buildings, landmarks and walking paths."></div>
+
+<nav class="topbar" aria-label="Site">
+  <button id="tabCollege" class="active" type="button" aria-pressed="true">College</button>
+  <button id="tabHostel" type="button" aria-pressed="false">Hostel</button>
+</nav>
 
 <div class="contribute-widget" id="contributeWidget">
   <button id="btnContribute" class="contribute-btn" type="button">
     <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
     Contribute
   </button>
-  <div class="contribute-menu" id="contributeMenu">
-    <div class="menu-section-label">Add to the map</div>
-    <button id="menuAddLandmark" class="menu-item" type="button">📌 <span>Add Landmark (Point)</span></button>
-    <button id="menuAddBuilding" class="menu-item" type="button">🏗️ <span>Add Building (Polygon)</span></button>
-    <button id="menuAddPath" class="menu-item" type="button">🛤️ <span>Add Path</span></button>
-    <button id="menuAddEntry" class="menu-item" type="button">🚪 <span>Add Entry Point</span></button>
-    <div class="menu-divider"></div>
-    <div class="menu-section-label">Edit existing</div>
-    <button id="menuEditLandmark" class="menu-item" type="button">📌 <span>Edit Landmark</span></button>
-    <button id="menuEditBuilding" class="menu-item" type="button">🏗️ <span>Edit Building</span></button>
-    <button id="menuEditPath" class="menu-item" type="button">🛤️ <span>Edit Path</span></button>
-    <button id="menuEditEntry" class="menu-item" type="button">🚪 <span>Edit Entry Point</span></button>
-    <div class="menu-divider"></div>
-    <a id="contribIssueLink" class="menu-item" href="#" target="_blank" rel="noopener">Report an issue</a>
-    <a id="contribRepoLink" class="menu-item" href="#" target="_blank" rel="noopener">View the repo</a>
+  <!-- Upstream's menu structure, with the accessibility treatment applied to
+       it. Every emoji here is decorative: the adjacent text already names the
+       action. Without aria-hidden a screen reader announces "pushpin Add
+       Landmark". -->
+  <div class="contribute-menu" id="contributeMenu" role="menu" aria-labelledby="btnContribute">
+    <div class="menu-section-label" id="menuGroupAdd">Add to the map</div>
+    <button id="menuAddLandmark" class="menu-item" type="button" role="menuitem"><span aria-hidden="true">📌</span> <span>Add Landmark (Point)</span></button>
+    <button id="menuAddBuilding" class="menu-item" type="button" role="menuitem"><span aria-hidden="true">🏗️</span> <span>Add Building (Polygon)</span></button>
+    <button id="menuAddPath" class="menu-item" type="button" role="menuitem"><span aria-hidden="true">🛤️</span> <span>Add Path</span></button>
+    <button id="menuAddEntry" class="menu-item" type="button" role="menuitem"><span aria-hidden="true">🚪</span> <span>Add Entry Point</span></button>
+    <div class="menu-divider" role="separator"></div>
+    <div class="menu-section-label" id="menuGroupEdit">Edit existing</div>
+    <button id="menuEditLandmark" class="menu-item" type="button" role="menuitem"><span aria-hidden="true">📌</span> <span>Edit Landmark</span></button>
+    <button id="menuEditBuilding" class="menu-item" type="button" role="menuitem"><span aria-hidden="true">🏗️</span> <span>Edit Building</span></button>
+    <button id="menuEditPath" class="menu-item" type="button" role="menuitem"><span aria-hidden="true">🛤️</span> <span>Edit Path</span></button>
+    <button id="menuEditEntry" class="menu-item" type="button" role="menuitem"><span aria-hidden="true">🚪</span> <span>Edit Entry Point</span></button>
+    <div class="menu-divider" role="separator"></div>
+    <a id="contribIssueLink" class="menu-item" href="#" target="_blank" rel="noopener" role="menuitem">Report an issue</a>
+    <a id="contribRepoLink" class="menu-item" href="#" target="_blank" rel="noopener" role="menuitem">View the repo</a>
   </div>
 </div>
 
 <div class="panel" id="toolPanel">
-  <div class="panel-toggle" id="panelToggle">&#9650;</div>
-  <button id="sidebarHideBtn" class="sidebar-hide-btn" title="Hide sidebar">✕ Hide</button>
+  <button class="panel-toggle" id="panelToggle" type="button" aria-expanded="true" aria-controls="toolPanel" aria-label="Collapse panel"><span aria-hidden="true">&#9650;</span></button>
+  <button id="sidebarHideBtn" class="sidebar-hide-btn" type="button" aria-controls="toolPanel" aria-label="Hide sidebar"><span aria-hidden="true">✕</span> Hide</button>
 
   <div class="status-strip" id="statusStrip"></div>
 
-  <div class="sidebar-tabs">
-    <button class="sidebar-tab active" data-tab="map">Map</button>
-    <button class="sidebar-tab" data-tab="directions">Directions</button>
+  <div class="sidebar-tabs" role="tablist" aria-label="Panel sections">
+    <button class="sidebar-tab active" data-tab="map" type="button" role="tab" id="tabBtnMap" aria-controls="mapPanel">Map</button>
+    <button class="sidebar-tab" data-tab="directions" type="button" role="tab" id="tabBtnDirections" aria-controls="directionsPanel">Directions</button>
   </div>
   <div class="tool-row" style="margin-bottom:10px;">
-    <button id="btnLockMaxZoom" class="btn" type="button" style="font-size:12px;">🔒 Lock Max Zoom</button>
+    <button id="btnLockMaxZoom" class="btn" type="button" style="font-size:12px;"><span aria-hidden="true">🔒</span> Lock Max Zoom</button>
   </div>
 
-  <div class="tab-panel active" id="mapPanel">
+  <div class="tab-panel active" id="mapPanel" role="tabpanel" aria-labelledby="tabBtnMap" tabindex="0">
     <div class="section-card buildings-box" id="buildingsSection">
       <h2>Buildings <span id="buildingCount" style="color:var(--text-dim); font-weight:400;"></span></h2>
       <div id="buildingGroups"></div>
@@ -76,24 +89,33 @@
     </div>
   </div>
 
-  <div class="tab-panel" id="directionsPanel">
+  <div class="tab-panel" id="directionsPanel" role="tabpanel" aria-labelledby="tabBtnDirections" tabindex="0">
     <div class="section-card buildings-box" id="directionsBox">
-      <h2>Directions</h2>
-      <div style="font-size:12px; color:var(--text-dim); margin-bottom:8px;">Routes over the traced path network where possible; falls back to a straight line if a building is too far from any path.</div>
-      <select id="dirFrom" class="cat-filter" style="margin-bottom:6px;"></select>
-      <select id="dirTo" class="cat-filter" style="margin-bottom:8px;"></select>
+      <h2 id="directionsHeading">Directions</h2>
+      <div id="directionsHelp" class="field-help">Routes over the traced path network where possible; falls back to a straight line if a building is too far from any path.</div>
+
+      <label class="visually-hidden" for="dirFrom">Start point</label>
+      <select id="dirFrom" class="cat-filter" style="margin-bottom:6px;" aria-describedby="directionsHelp"></select>
+
+      <label class="visually-hidden" for="dirTo">Destination</label>
+      <select id="dirTo" class="cat-filter" style="margin-bottom:8px;" aria-describedby="directionsHelp"></select>
+
       <div class="tool-row">
-        <button id="btnShowRoute" class="btn full">Show Route</button>
-        <button id="btnClearRoute" class="btn full">Clear</button>
+        <button id="btnShowRoute" class="btn full" type="button">Show Route</button>
+        <button id="btnClearRoute" class="btn full" type="button">Clear</button>
       </div>
-      <div id="routeReadout" class="status" style="display:none;"></div>
+      <!-- The route result is announced: a sighted user sees it appear, a
+           screen reader user gets nothing unless the region is live. -->
+      <div id="routeReadout" class="status" style="display:none;" role="status" aria-live="polite" aria-atomic="true"></div>
     </div>
   </div>
 
-  <div id="statusBox" class="status">Tap a place below, or use Show Route to get directions.</div>
+  <!-- Drawing/status feedback is announced as it changes; polite so it never
+       interrupts what the user is already doing. -->
+  <div id="statusBox" class="status" role="status" aria-live="polite">Tap a place below, or use Show Route to get directions.</div>
 </div>
 
-<div id="sidebarShowBtn" class="sidebar-toggle" title="Show sidebar" style="display:none;">☰</div>
+<button id="sidebarShowBtn" class="sidebar-toggle" type="button" aria-controls="toolPanel" aria-label="Show sidebar" style="display:none;"><span aria-hidden="true">☰</span></button>
 
 <div class="edit-toolbar" id="buildingActions" style="display:none;">
   <div class="edit-toolbar-label">Adding building</div>
@@ -129,16 +151,24 @@
   </div>
 </div>
 
-<div id="nameCategoryModal" class="modal-overlay" style="display:none;">
+<!-- A placeholder is not a label: it disappears on input and is not reliably
+     announced. Both inputs were previously unnamed to assistive tech. -->
+<div id="nameCategoryModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal-box">
     <h3 id="modalTitle">Name this building</h3>
+
+    <label class="visually-hidden" for="modalNameInput">Building name (optional)</label>
     <input id="modalNameInput" type="text" placeholder="Building name (optional)" autocomplete="off" />
-    <div class="modal-label">Category</div>
-    <div id="modalCategoryChips" class="chip-row"></div>
+
+    <div class="modal-label" id="modalCategoryLabel">Category</div>
+    <div id="modalCategoryChips" class="chip-row" role="group" aria-labelledby="modalCategoryLabel"></div>
+
+    <label class="visually-hidden" for="modalCustomCategory">Or type a custom category</label>
     <input id="modalCustomCategory" type="text" placeholder="Or type a custom category..." autocomplete="off" style="margin-top:8px;" />
+
     <div class="tool-row" style="margin-top:14px;">
-      <button id="modalCancelBtn" class="btn danger full">Cancel</button>
-      <button id="modalSaveBtn" class="btn full">Save</button>
+      <button id="modalCancelBtn" class="btn danger full" type="button">Cancel</button>
+      <button id="modalSaveBtn" class="btn full" type="button">Save</button>
     </div>
   </div>
 </div>
