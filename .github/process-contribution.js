@@ -4,6 +4,7 @@ const path = require('path');
 
 const body = process.env.ISSUE_BODY;
 const issueNum = process.env.ISSUE_NUMBER;
+const repo = 'accelerate-muj/campus-mapper';
 
 function run(cmd) {
   console.log('> ' + cmd);
@@ -71,15 +72,24 @@ fs.writeFileSync(targetFile, JSON.stringify(items, null, 2) + '\n');
 console.log('Wrote ' + items.length + ' items to ' + targetFile);
 
 const itemName = data.name || 'Unnamed';
-const commitMsg = 'Add ' + type + ': ' + itemName + ' (' + site + ')';
+let branch = 'contribution/' + type + '/' + itemName;
+branch = branch.toLowerCase().replace(/[^a-z0-9._-]/g, '-').replace(/-+/g, '-').substring(0, 50);
 
 run('git config user.name "github-actions[bot]"');
 run('git config user.email "github-actions[bot]@users.noreply.github.com"');
+run('git checkout -b ' + branch);
 run('git add ' + targetFile);
-run('git commit -m "' + commitMsg + '"');
-run('git push origin main');
+run('git commit -m "Add ' + type + ': ' + itemName + ' (' + site + ')"');
+run('git push origin ' + branch);
 
-const itemNameClean = itemName.replace(/"/g, '\\"');
-comment('Contribution processed!\n\n- **Item:** ' + itemName + ' (' + type + ')\n- **File:** `' + targetFile + '`\n\nMerged to `main` automatically. Check the updated map!');
+const prLink = 'https://github.com/' + repo + '/compare/main...' + branch + '?expand=1&title=' + encodeURIComponent('Add ' + type + ': ' + itemName);
+const closeLink = 'https://github.com/' + repo + '/issues/' + issueNum + '#issuecomment-new';
+
+comment('Contribution processed!\n\n' +
+  '- **Item:** ' + itemName + ' (' + type + ')\n' +
+  '- **File:** `' + targetFile + '`\n' +
+  '- **Branch:** `' + branch + '`\n\n' +
+  '[**Click here to create a Pull Request**](' + prLink + ')\n\n' +
+  'The data is ready on the `' + branch + '` branch. A maintainer just needs to click the link above to open the PR.');
 
 console.log('Done.');
