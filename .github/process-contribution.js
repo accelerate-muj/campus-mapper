@@ -172,7 +172,8 @@ run('git add ' + targetFile);
 run('git commit -m "Add ' + type + ': ' + itemName + ' (' + site + ')"');
 run('git push origin ' + branch);
 
-const prLink = 'https://github.com/' + repo + '/compare/main...' + branch + '?expand=1&title=' + encodeURIComponent('Add ' + type + ': ' + itemName);
+const prTitle = 'Add ' + type + ': ' + itemName + ' (Closes #' + issueNum + ')';
+const prLink = 'https://github.com/' + repo + '/compare/main...' + branch + '?expand=1&title=' + encodeURIComponent(prTitle);
 
 comment('Contribution processed!\n\n' +
   '- **Item:** ' + itemName + ' (' + type + ')\n' +
@@ -180,6 +181,6 @@ comment('Contribution processed!\n\n' +
   '- **File:** `' + targetFile + '`\n' +
   '- **Branch:** `' + branch + '`\n\n' +
   '[**Click here to create a Pull Request**](' + prLink + ')\n\n' +
-  'The data is ready on the `' + branch + '` branch. A maintainer just needs to click the link above to open the PR.');
+  'The data is ready on the `' + branch + '` branch. You can create the PR yourself by clicking the link above — no need to wait for a maintainer.');
 
 console.log('Done.');
