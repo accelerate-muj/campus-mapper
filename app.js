@@ -1,4 +1,4 @@
-(function(){
+(async function(){
   "use strict";
 
   // ---------- Map setup ----------
@@ -30,13 +30,13 @@
   map.getPane('maskPane').style.zIndex = 350;
   map.getPane('maskPane').style.pointerEvents = 'none';
 
-  // ---------- Persistent state ----------
-  // BAKED_DATA is the committed, shared source of truth. It lives as plain
-  // JSON in the <script id="mapData"> block right above this script — open
-  // the file in a text editor and you'll see it as readable JSON, not
-  // buried in code. To publish changes: click "Copy JSON", paste it over
-  // the contents of that block, then commit/PR the file.
-  const BAKED_DATA = window.BAKED_DATA;
+  // ---------- Load campus data ----------
+  // campus-data.json is the committed, shared source of truth — all
+  // buildings, landmarks, paths, boundaries, and compass settings live
+  // there as plain JSON. This fetches it on page load so app.js doesn't
+  // need a separate <script> block to embed the data inline.
+  const response = await fetch('campus-data.json');
+  const BAKED_DATA = await response.json();
   // Snapshot of exactly what's baked into the file right now. Used to
   // detect "the file on disk changed since I last saved a local draft" —
   // see loadData() below.
