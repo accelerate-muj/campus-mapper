@@ -28,11 +28,14 @@
     <button id="menuAddLandmark" class="menu-item" type="button">📌 <span>Add Landmark (Point)</span></button>
     <button id="menuAddBuilding" class="menu-item" type="button">🏗️ <span>Add Building (Polygon)</span></button>
     <button id="menuAddPath" class="menu-item" type="button">🛤️ <span>Add Path</span></button>
+    <button id="menuAddEntry" class="menu-item" type="button">🚪 <span>Add Entry Point</span></button>
     <button id="menuTraceLandmarks" class="menu-item" type="button">🧭 <span>Trace Landmarks</span> <span id="menuLandmarkBadge" class="menu-badge"></span></button>
     <div class="menu-divider"></div>
-    <div class="menu-section-label">Edit / Delete</div>
+    <div class="menu-section-label">Edit existing</div>
+    <button id="menuEditLandmark" class="menu-item" type="button">📌 <span>Edit Landmark</span></button>
+    <button id="menuEditBuilding" class="menu-item" type="button">🏗️ <span>Edit Building</span></button>
+    <button id="menuEditPath" class="menu-item" type="button">🛤️ <span>Edit Path</span></button>
     <button id="menuEditEntry" class="menu-item" type="button">🚪 <span>Edit Entry Point</span></button>
-    <button id="menuDeletePath" class="menu-item" type="button">🗑️ <span>Delete Path</span></button>
     <div class="menu-divider"></div>
     <a id="contribIssueLink" class="menu-item" href="#" target="_blank" rel="noopener">Report an issue</a>
     <a id="contribRepoLink" class="menu-item" href="#" target="_blank" rel="noopener">View the repo</a>
@@ -145,7 +148,6 @@
     <p id="contributionDesc" class="modal-desc"></p>
     <pre id="contributionJSON" class="json-preview"></pre>
     <div class="tool-row">
-      <button id="btnCopyContribution" class="btn">📋 Copy JSON</button>
       <button id="btnSubmitContribution" class="btn btn-success">🚀 Submit PR</button>
     </div>
     <button id="btnCloseContribution" class="btn full" style="margin-top:8px;">Close</button>

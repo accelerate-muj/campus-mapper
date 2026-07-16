@@ -251,28 +251,15 @@
   const contributionTitle = document.getElementById('contributionTitle');
   const contributionDesc = document.getElementById('contributionDesc');
   const contributionJSON = document.getElementById('contributionJSON');
-  const btnCopyContribution = document.getElementById('btnCopyContribution');
   const btnSubmitContribution = document.getElementById('btnSubmitContribution');
   const btnCloseContribution = document.getElementById('btnCloseContribution');
 
   function showContributionPreview(type, name, jsonSnippet, site, filePath){
     const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
     contributionTitle.textContent = 'Submit: New ' + typeLabel;
-    contributionDesc.textContent = 'Copy the JSON or click Submit — a bot will place it in the right file and open a PR for you.';
+    contributionDesc.textContent = 'Review the JSON below, then click Submit — a bot will place it in the right file and open a PR for you.';
     contributionJSON.textContent = jsonSnippet;
     contributionModal.style.display = 'flex';
-
-    btnCopyContribution.textContent = '📋 Copy JSON';
-    btnCopyContribution.onclick = function(){
-      if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(jsonSnippet).then(function(){
-          btnCopyContribution.textContent = 'Copied!';
-          setTimeout(function(){ btnCopyContribution.textContent = '📋 Copy JSON'; }, 1800);
-        });
-      } else {
-        window.prompt('Copy this JSON:', jsonSnippet);
-      }
-    };
 
     btnSubmitContribution.onclick = function(){
       const title = 'Add ' + type + ': ' + (name || 'Unnamed') + (site ? ' (' + site + ')' : '');
@@ -315,7 +302,8 @@
 
   function isAnyToolActive(){
     return !!(drawingBuilding || placingEntryFor || selectingEntryTarget ||
-              drawingPath || deletingPath || placingNewLandmark);
+              drawingPath || placingNewLandmark ||
+              editingLandmark || editingBuilding || editingPath);
   }
 
   function refreshMapEditMode(){
@@ -414,9 +402,12 @@
   // Buildings); every editing action is launched from here instead.
   const menuAddBuilding = document.getElementById('menuAddBuilding');
   const menuAddLandmark = document.getElementById('menuAddLandmark');
-  const menuEditEntry = document.getElementById('menuEditEntry');
   const menuAddPath = document.getElementById('menuAddPath');
-  const menuDeletePath = document.getElementById('menuDeletePath');
+  const menuAddEntry = document.getElementById('menuAddEntry');
+  const menuEditLandmark = document.getElementById('menuEditLandmark');
+  const menuEditBuilding = document.getElementById('menuEditBuilding');
+  const menuEditPath = document.getElementById('menuEditPath');
+  const menuEditEntry = document.getElementById('menuEditEntry');
   const menuTraceLandmarks = document.getElementById('menuTraceLandmarks');
   const menuLandmarkBadge = document.getElementById('menuLandmarkBadge');
   const landmarksBox = document.getElementById('landmarksBox');
@@ -637,11 +628,6 @@
       const line = L.polyline(p.points, {
         color: '#6aa9e0', weight: 2.5, opacity: 0.8, dashArray: '6,4', lineCap: 'round'
       }).bindTooltip(p.name || 'Path', { sticky: true }).addTo(pathsLayer);
-      line.on('click', function(ev){
-        if(!deletingPath) return;
-        L.DomEvent.stopPropagation(ev);
-        deletePath(p.id);
-      });
     });
   }
 
@@ -986,8 +972,11 @@
 
   map.on('click', function(e){
     if(placingNewLandmark){ handleNewLandmarkClick(e.latlng); return; }
+    if(editingLandmark){ handleEditLandmarkClick(e.latlng); return; }
+    if(editingBuilding){ handleEditBuildingClick(e.latlng); return; }
+    if(editingPath){ handleEditPathClick(e.latlng); return; }
     if(placingEntryFor){ placeEntryAt(e.latlng); return; }
-    if(drawingBoundary) return; // boundary uses drag, not click
+    if(drawingBoundary) return;
     if(drawingPath){
       const snap = snapToExistingPath(e.latlng);
       const finalLatlng = snap ? L.latLng(snap.lat, snap.lng) : e.latlng;
@@ -1160,8 +1149,10 @@
     if(placingEntryFor) cancelEntryPlacement();
     if(selectingEntryTarget) cancelSelectEntryTarget();
     if(drawingPath) cancelPathEdit();
-    if(deletingPath) cancelDeletePath();
     if(placingNewLandmark) cancelAddLandmark();
+    if(editingLandmark) cancelEditLandmark();
+    if(editingBuilding) cancelEditBuilding();
+    if(editingPath) cancelEditPath();
     refreshMapEditMode();
   }
 
@@ -1238,6 +1229,184 @@
     refreshMapEditMode();
   }
 
+  // ---------------- Edit Landmark ----------------
+  // Click an existing landmark on the map to rename, move, change
+  // category/floor, or delete it. Only unresolved landmarks are editable.
+  let editingLandmark = false;
+
+  function startEditLandmark(){
+    cancelAllEditModes();
+    editingLandmark = true;
+    map.getContainer().classList.add('drawing-cursor');
+    setStatus('Click a landmark on the map to edit it (rename, move, change category, or delete).', true);
+    refreshMapEditMode();
+  }
+
+  function cancelEditLandmark(){
+    editingLandmark = false;
+    map.getContainer().classList.remove('drawing-cursor');
+    refreshMapEditMode();
+  }
+
+  function handleEditLandmarkClick(latlng){
+    let best = null, bestDist = Infinity;
+    siteData.landmarks.forEach(function(lm){
+      const d = metersBetween(latlng.lat, latlng.lng, lm.lat, lm.lng);
+      if(d < bestDist){ bestDist = d; best = lm; }
+    });
+    if(!best || bestDist > 50){
+      setStatus('No landmark nearby. Click closer to a landmark marker.');
+      return;
+    }
+    cancelEditLandmark();
+    openNameCategoryModal({
+      title: 'Edit "' + best.name + '"',
+      defaultName: best.name,
+      defaultCategory: best.category || 'other',
+      onSave: function(name, category){
+        if(!name){
+          if(window.confirm('Delete landmark "' + best.name + '"?')){
+            siteData.landmarks = siteData.landmarks.filter(function(l){ return l.id !== best.id; });
+            renderLandmarks();
+            renderLandmarkList();
+            populateDirectionSelects();
+            setStatus('Landmark "' + best.name + '" deleted.');
+          } else {
+            setStatus('Landmark unchanged.');
+          }
+          return;
+        }
+        best.name = name;
+        best.category = category || null;
+        renderLandmarks();
+        renderLandmarkList();
+        populateDirectionSelects();
+        setStatus('Landmark updated to "' + name + '".');
+      },
+      onCancel: function(){
+        setStatus('Edit cancelled.');
+      }
+    });
+  }
+
+  // ---------------- Edit Building ----------------
+  // Click an existing building on the map to rename, change category/floor,
+  // or delete it.
+  let editingBuilding = false;
+
+  function startEditBuilding(){
+    cancelAllEditModes();
+    editingBuilding = true;
+    map.getContainer().classList.add('drawing-cursor');
+    setStatus('Click a building on the map to edit it (rename, change category, set floor, or delete).', true);
+    refreshMapEditMode();
+  }
+
+  function cancelEditBuilding(){
+    editingBuilding = false;
+    map.getContainer().classList.remove('drawing-cursor');
+    refreshMapEditMode();
+  }
+
+  function handleEditBuildingClick(latlng){
+    let best = null, bestDist = Infinity;
+    currentSiteBuildings().forEach(function(b){
+      const latlngs = b.points.map(function(p){ return L.latLng(p[0], p[1]); });
+      const center = L.latLngBounds(latlngs).getCenter();
+      const d = metersBetween(latlng.lat, latlng.lng, center.lat, center.lng);
+      if(d < bestDist){ bestDist = d; best = b; }
+    });
+    if(!best || bestDist > 100){
+      setStatus('No building nearby. Click closer to a building.');
+      return;
+    }
+    cancelEditBuilding();
+    const floorVal = window.prompt('Floor label for "' + (best.name || 'Building') + '" (leave blank to keep "' + (best.floor || 'none') + '"):', best.floor || '');
+    if(floorVal !== null) best.floor = floorVal.trim() || null;
+    openNameCategoryModal({
+      title: 'Edit "' + (best.name || 'Building') + '"',
+      defaultName: best.name || '',
+      defaultCategory: best.category || 'other',
+      onSave: function(name, category){
+        if(!name){
+          if(window.confirm('Delete building "' + (best.name || 'Building') + '"?')){
+            siteData.buildings = siteData.buildings.filter(function(b2){ return b2.id !== best.id; });
+            renderBuildings();
+            renderEntryMarkers();
+            populateDirectionSelects();
+            setStatus('Building deleted.');
+          } else {
+            setStatus('Building unchanged.');
+          }
+          return;
+        }
+        best.name = name;
+        best.category = category || 'other';
+        renderBuildings();
+        populateDirectionSelects();
+        setStatus('Building updated to "' + name + '".');
+      },
+      onCancel: function(){
+        setStatus('Edit cancelled.');
+      }
+    });
+  }
+
+  // ---------------- Edit Path ----------------
+  // Click an existing path on the map to rename or delete it.
+  let editingPath = false;
+
+  function startEditPath(){
+    cancelAllEditModes();
+    editingPath = true;
+    map.getContainer().classList.add('drawing-cursor');
+    setStatus('Click a path on the map to rename or delete it.', true);
+    refreshMapEditMode();
+  }
+
+  function cancelEditPath(){
+    editingPath = false;
+    map.getContainer().classList.remove('drawing-cursor');
+    refreshMapEditMode();
+  }
+
+  function handleEditPathClick(latlng){
+    let best = null, bestDist = Infinity;
+    siteData.paths.forEach(function(p){
+      if(p.site !== currentSite) return;
+      for(var i = 0; i < p.points.length - 1; i++){
+        const a = L.latLng(p.points[i][0], p.points[i][1]);
+        const b = L.latLng(p.points[i+1][0], p.points[i+1][1]);
+        const seg = L.latLngBounds(a, b);
+        const closest = seg.getCenter();
+        const d = metersBetween(latlng.lat, latlng.lng, closest.lat, closest.lng);
+        if(d < bestDist){ bestDist = d; best = p; }
+      }
+    });
+    if(!best || bestDist > 50){
+      setStatus('No path nearby. Click closer to a path line.');
+      return;
+    }
+    cancelEditPath();
+    const action = window.prompt(
+      'Path: "' + (best.name || 'Unnamed') + '"\n\n' +
+      'Type a new name, or type "delete" to remove it:',
+      best.name || ''
+    );
+    if(action === null){ setStatus('Edit cancelled.'); return; }
+    if(action.toLowerCase() === 'delete'){
+      siteData.paths = siteData.paths.filter(function(p2){ return p2.id !== best.id; });
+      renderPaths();
+      graphCache = {};
+      populateDirectionSelects();
+      setStatus('Path "' + (best.name || 'Unnamed') + '" deleted.');
+    } else {
+      best.name = action.trim() || null;
+      renderPaths();
+      setStatus('Path renamed to "' + (best.name || 'Unnamed') + '".');
+    }
+  }
+
   // ---------------- Add Path ----------------
   // Trace a new walking-path segment (click to place waypoints, Finish to
   // save). Only needs 2+ points and stays an open line.
@@ -1245,11 +1414,6 @@
   let currentPathPoints = [];
   let pathVertexMarkers = [];
   let pathPreviewLine = null;
-
-  // ---------------- Delete Path ----------------
-  // Click an existing path to remove it. Uses a separate flag so the
-  // render function knows to make paths clickable for deletion.
-  let deletingPath = false;
 
   function startAddPath(){
     cancelAllEditModes();
@@ -1260,14 +1424,6 @@
     map.getContainer().classList.add('drawing-cursor');
     pathActions.style.display = 'flex';
     setStatus('Click to trace a new path (2+ points), then Finish.', true);
-    refreshMapEditMode();
-  }
-
-  function startDeletePath(){
-    cancelAllEditModes();
-    deletingPath = true;
-    map.getContainer().classList.add('drawing-cursor');
-    setStatus('Click an existing path on the map to delete it. Press Escape when done.', true);
     refreshMapEditMode();
   }
 
@@ -1291,13 +1447,6 @@
   function cancelPathEdit(){
     endPathEditUI();
     setStatus('Path editing closed.');
-  }
-
-  function cancelDeletePath(){
-    deletingPath = false;
-    map.getContainer().classList.remove('drawing-cursor');
-    refreshMapEditMode();
-    setStatus('Path deletion mode closed.');
   }
 
   function updatePathPreview(){
@@ -1333,16 +1482,6 @@
     setStatus('Path ready to submit. Copy the JSON and create a PR.');
   }
 
-  function deletePath(pathId){
-    const p = siteData.paths.find(pp => pp.id === pathId);
-    if(!p) return;
-    if(!window.confirm('Delete ' + (p.name || 'this path segment') + '?')) return;
-    siteData.paths = siteData.paths.filter(pp => pp.id !== pathId);
-    renderPaths();
-    graphCache = {};
-    populateDirectionSelects();
-    setStatus('Path segment deleted.');
-  }
 
   btnPathCancel.addEventListener('click', cancelPathEdit);
   btnPathFinish.addEventListener('click', finishPath);
@@ -1352,7 +1491,10 @@
   menuAddBuilding.addEventListener('click', startBuildingDraw);
   menuAddLandmark.addEventListener('click', startAddLandmark);
   menuAddPath.addEventListener('click', startAddPath);
-  menuDeletePath.addEventListener('click', startDeletePath);
+  menuAddEntry.addEventListener('click', startSelectEntryTarget);
+  menuEditLandmark.addEventListener('click', startEditLandmark);
+  menuEditBuilding.addEventListener('click', startEditBuilding);
+  menuEditPath.addEventListener('click', startEditPath);
   menuEditEntry.addEventListener('click', startSelectEntryTarget);
   menuTraceLandmarks.addEventListener('click', function(){
     cancelAllEditModes();
@@ -1370,9 +1512,11 @@
       if(contributionModal.style.display === 'flex'){ btnCloseContribution.click(); return; }
       if(nameCategoryModal.style.display === 'flex'){ modalCancelBtn.click(); return; }
       if(placingNewLandmark){ cancelAddLandmark(); setStatus('Landmark placement cancelled.'); return; }
+      if(editingLandmark){ cancelEditLandmark(); setStatus('Landmark edit cancelled.'); return; }
+      if(editingBuilding){ cancelEditBuilding(); setStatus('Building edit cancelled.'); return; }
+      if(editingPath){ cancelEditPath(); setStatus('Path edit cancelled.'); return; }
       if(selectingEntryTarget){ cancelSelectEntryTarget(); setStatus('Entry point editing cancelled.'); return; }
       if(placingEntryFor) cancelEntryPlacement();
-      if(deletingPath){ cancelDeletePath(); return; }
       if(drawingPath) cancelPathEdit();
       if(drawingBuilding) cancelBuildingDraw();
       if(drawingBoundary) cancelBoundaryDraw();
@@ -1415,11 +1559,37 @@
         catLabel.prepend(catDot);
         popupEl.appendChild(catLabel);
       }
-      const btn = document.createElement('button');
-      btn.textContent = '▸ Mark building';
-      btn.style.cssText = 'appearance:none; border:1px solid #313b44; background:#4fb3a9; color:#0d1414; font-weight:700; font-size:12px; padding:6px 10px; border-radius:6px; cursor:pointer;';
-      btn.addEventListener('click', function(){ startBuildingDrawForLandmark(lm.id); marker.closePopup(); });
-      popupEl.appendChild(btn);
+      const btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex; gap:6px;';
+      const btnBuilding = document.createElement('button');
+      btnBuilding.textContent = '🏗️ Mark as Building';
+      btnBuilding.style.cssText = 'appearance:none; border:1px solid #313b44; background:#4fb3a9; color:#0d1414; font-weight:700; font-size:11px; padding:6px 10px; border-radius:6px; cursor:pointer;';
+      btnBuilding.addEventListener('click', function(){ startBuildingDrawForLandmark(lm.id); marker.closePopup(); });
+      btnRow.appendChild(btnBuilding);
+      const btnLandmark = document.createElement('button');
+      btnLandmark.textContent = '📌 Mark as Landmark';
+      btnLandmark.style.cssText = 'appearance:none; border:1px solid #313b44; background:#e08e45; color:#0d1414; font-weight:700; font-size:11px; padding:6px 10px; border-radius:6px; cursor:pointer;';
+      btnLandmark.addEventListener('click', function(){
+        marker.closePopup();
+        openNameCategoryModal({
+          title: 'Confirm landmark "' + lm.name + '"',
+          defaultName: lm.name,
+          defaultCategory: lm.category || 'other',
+          onSave: function(name, category){
+            if(!name){ setStatus('Landmark unchanged.'); return; }
+            lm.name = name;
+            lm.category = category || null;
+            lm.resolved = true;
+            renderLandmarks();
+            renderLandmarkList();
+            populateDirectionSelects();
+            setStatus('Landmark "' + name + '" confirmed.');
+          },
+          onCancel: function(){ setStatus('Landmark unchanged.'); }
+        });
+      });
+      btnRow.appendChild(btnLandmark);
+      popupEl.appendChild(btnRow);
       marker.bindPopup(popupEl);
     });
   }
