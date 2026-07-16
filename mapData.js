@@ -2067,6 +2067,16 @@ window.BAKED_DATA = {
       "floor": null
     },
     {
+      "id": "lm_1784222752608a6d710d1157a58",
+      "name": "Nescafe",
+      "lat": 26.842633930924755,
+      "lng": 75.56535587592525,
+      "resolved": false,
+      "entry": null,
+      "category": "dining",
+      "floor": null
+    },
+    {
       "id": "lm01",
       "name": "B-11 & B-12",
       "lat": 26.843337,
