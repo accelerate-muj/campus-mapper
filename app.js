@@ -500,6 +500,7 @@
   // ================= ZOOM LOCK =================
   const zoomLockBadge = document.getElementById('zoomLockBadge');
   function updateZoomLockUI(){
+    if(!zoomLockBadge) return;
     const zl = siteData[currentSite].zoomLocked;
     if(zl !== null){
       zoomLockBadge.style.display = 'inline-flex';
@@ -532,7 +533,7 @@
       setStatus('Zoom locked to ' + site.zoomLocked.toFixed(1) + ' for ' + currentSite + '. Click the badge to unlock.');
     }
   }
-  zoomLockBadge.addEventListener('click', toggleZoomLock);
+  if(zoomLockBadge) zoomLockBadge.addEventListener('click', toggleZoomLock);
 
   // No-op stub: boundary drawing can never be in progress anymore
   // (drawingBoundary is always false), but this is still called from a
