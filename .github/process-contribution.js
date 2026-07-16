@@ -22,11 +22,13 @@ function comment(msg) {
 
 if (!body) { console.log('No issue body'); process.exit(0); }
 
-const typeMatch = body.match(/\*\*Type:\*\*\s*(\w+)/);
-const siteMatch = body.match(/\*\*Site:\*\*\s*(\w+)/);
-const catMatch = body.match(/\*\*Category:\*\*\s*(\w+)/);
-const fileMatch = body.match(/\*\*File:\*\*\s*`([^`]+)`/);
-const jsonMatch = body.match(/```json\n([\s\S]*?)\n```/);
+const normalizedBody = body.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+
+const typeMatch = normalizedBody.match(/\*\*Type:\*\*\s*(\w+)/);
+const siteMatch = normalizedBody.match(/\*\*Site:\*\*\s*(\w+)/);
+const catMatch = normalizedBody.match(/\*\*Category:\*\*\s*(\w+)/);
+const fileMatch = normalizedBody.match(/\*\*File:\*\*\s*`([^`]+)`/);
+const jsonMatch = normalizedBody.match(/```json\n([\s\S]*?)\n```/);
 
 const type = typeMatch ? typeMatch[1] : null;
 const site = siteMatch ? siteMatch[1] : 'college';
