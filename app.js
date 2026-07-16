@@ -1,6 +1,63 @@
 (function(){
   "use strict";
 
+  // ---------- Extracted modules ----------
+  // Pure geometry and routing live in src/, loaded as plain scripts before this
+  // file (see index.html). They hold no map or DOM state, which is what lets
+  // tests/ exercise the routing engine without a browser.
+  const Geo = window.CampusGeo;
+  const Routing = window.CampusRouting;
+
+  const metersBetween = Geo.metersBetween;
+  const densifyEntryLine = Geo.densifyEntryLine;
+
+  // ---------- Theme ----------
+  // The theme is already applied by the inline script in index.html's <head>
+  // (before first paint). This only wires up the toggle and keeps its label
+  // honest. Every colour resolves through a token in style.css, so switching
+  // is a single attribute on <html>.
+  const THEME_KEY = 'campusMapper.theme';
+  const themeToggle = document.getElementById('themeToggle');
+
+  function currentTheme(){
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+
+  function renderThemeToggle(){
+    const next = currentTheme() === 'light' ? 'dark' : 'light';
+    // The icon is decorative; the label describes what the button DOES, which
+    // is what a screen reader should hear — not what the theme currently is.
+    themeToggle.innerHTML = '<span aria-hidden="true">' + (currentTheme() === 'light' ? '☀' : '◐') + '</span>';
+    themeToggle.setAttribute('aria-label', 'Switch to ' + next + ' theme');
+    themeToggle.setAttribute('title', 'Switch to ' + next + ' theme');
+  }
+
+  function applyTheme(theme){
+    if(theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    else document.documentElement.removeAttribute('data-theme'); // dark is :root
+    renderThemeToggle();
+  }
+
+  themeToggle.addEventListener('click', function(){
+    const next = currentTheme() === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    try { localStorage.setItem(THEME_KEY, next); } catch(e){ /* storage blocked; theme still applies for this session */ }
+  });
+
+  // Follow the OS only while the user has not made an explicit choice.
+  if(window.matchMedia){
+    const media = window.matchMedia('(prefers-color-scheme: light)');
+    const onChange = function(e){
+      let saved = null;
+      try { saved = localStorage.getItem(THEME_KEY); } catch(err){ /* ignore */ }
+      if(!saved) applyTheme(e.matches ? 'light' : 'dark');
+    };
+    if(media.addEventListener) media.addEventListener('change', onChange);
+    else if(media.addListener) media.addListener(onChange); // Safari < 14
+  }
+
+  renderThemeToggle();
+
   // ---------- Map setup ----------
   const map = L.map('map', {
     minZoom: 2, maxZoom: 20, maxBoundsViscosity: 1.0, zoomControl: true,
@@ -143,24 +200,7 @@
   // treats the whole line/loop as valid entry ground instead of just its
   // placed vertices (there's no separate point-to-segment distance check —
   // this is a deliberately simple way to get the same effect).
-  function densifyEntryLine(points, closed){
-    if(!points || points.length < 2) return points || [];
-    const out = [];
-    const segCount = closed ? points.length : points.length - 1;
-    for(let i = 0; i < segCount; i++){
-      const a = points[i];
-      const b = points[(i + 1) % points.length];
-      out.push(a);
-      const distM = metersBetween(a[0], a[1], b[0], b[1]);
-      const steps = Math.max(1, Math.round(distM / 2));
-      for(let s = 1; s < steps; s++){
-        const t = s / steps;
-        out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
-      }
-    }
-    if(!closed) out.push(points[points.length - 1]);
-    return out;
-  }
+  // densifyEntryLine moved to src/geo.js (aliased above).
 
   function cloneBuildings(list){
     return (list || []).map(b => ({
@@ -322,16 +362,28 @@
   const panelToggle = document.getElementById('panelToggle');
   const isSmallScreen = () => window.matchMedia('(max-width: 680px)').matches;
 
+  // The arrow is decorative — it must stay wrapped in aria-hidden, and the real
+  // state has to travel on aria-expanded. Writing innerHTML directly here used
+  // to drop that wrapper, leaving the button announced as "up pointing
+  // triangle" with no indication of what it does or whether it is open.
+  function renderPanelToggle(){
+    const collapsed = toolPanel.classList.contains('collapsed');
+    panelToggle.innerHTML = '<span aria-hidden="true">' + (collapsed ? '&#9650;' : '&#9660;') + '</span>';
+    panelToggle.setAttribute('aria-expanded', String(!collapsed));
+    panelToggle.setAttribute('aria-label', collapsed ? 'Expand panel' : 'Collapse panel');
+  }
+
   panelToggle.addEventListener('click', function(){
     toolPanel.classList.toggle('collapsed');
-    panelToggle.innerHTML = toolPanel.classList.contains('collapsed') ? '&#9650;' : '&#9660;';
+    renderPanelToggle();
   });
   if(isSmallScreen()) toolPanel.classList.add('collapsed');
+  renderPanelToggle();
 
   function expandPanelOnMobile(){
     if(isSmallScreen() && toolPanel.classList.contains('collapsed')){
       toolPanel.classList.remove('collapsed');
-      panelToggle.innerHTML = '&#9660;';
+      renderPanelToggle();
     }
   }
 
@@ -477,6 +529,16 @@
   function applyCompassLock(){
     const locked = !!(siteData.compass && siteData.compass.locked);
     const rotateControlEl = document.querySelector('.leaflet-control-rotate');
+
+    // leaflet-rotate builds its toggle with only a title attribute. A title is
+    // a last-resort accessible name: it is not surfaced on touch, and screen
+    // readers treat it inconsistently. We can't change the plugin, but we can
+    // label the element it produced.
+    const rotateToggle = document.querySelector('.leaflet-control-rotate-toggle');
+    if(rotateToggle && !rotateToggle.getAttribute('aria-label')){
+      rotateToggle.setAttribute('aria-label', rotateToggle.getAttribute('title') || 'Rotate map');
+    }
+
     if(locked){
       map.setBearing(siteData.compass.bearing);
       if(map.touchRotate) map.touchRotate.disable();
@@ -498,6 +560,11 @@
   }
 
   // ================= ZOOM LOCK =================
+  // This function does two separate jobs: it ENFORCES the zoom cap on the map,
+  // and it reflects that state in a badge. Only the badge is optional — the
+  // status pills were removed from index.html upstream, so zoomLockBadge may be
+  // null. Guard the badge, never the enforcement: an early return here silently
+  // stops the zoom lock from locking anything.
   const zoomLockBadge = document.getElementById('zoomLockBadge');
   function updateZoomLockUI(){
     const zl = siteData[currentSite].zoomLocked;
@@ -543,15 +610,16 @@
   if(zoomLockBadge) zoomLockBadge.addEventListener('click', toggleZoomLock);
 
   // ================= LOCK MAX ZOOM BUTTON =================
+  // Replaces the status pill as the way to set/clear the per-site zoom cap.
   const btnLockMaxZoom = document.getElementById('btnLockMaxZoom');
   function updateLockMaxZoomBtn(){
     if(!btnLockMaxZoom) return;
     const zl = siteData[currentSite].zoomLocked;
     if(zl !== null){
-      btnLockMaxZoom.textContent = '🔓 Unlock Zoom (max ' + zl.toFixed(1) + ')';
+      btnLockMaxZoom.innerHTML = '<span aria-hidden="true">🔓</span> Unlock Zoom (max ' + zl.toFixed(1) + ')';
       btnLockMaxZoom.classList.add('on');
     } else {
-      btnLockMaxZoom.textContent = '🔒 Lock Max Zoom';
+      btnLockMaxZoom.innerHTML = '<span aria-hidden="true">🔒</span> Lock Max Zoom';
       btnLockMaxZoom.classList.remove('on');
     }
   }
@@ -1535,6 +1603,9 @@
   menuEditBuilding.addEventListener('click', startEditBuilding);
   menuEditPath.addEventListener('click', startEditPath);
   menuEditEntry.addEventListener('click', startSelectEntryTarget);
+  // The Trace Landmarks menu item and its panel were removed from index.html
+  // upstream; these guards are what keep app.js from throwing on the missing
+  // elements and aborting before anything renders.
   if(menuTraceLandmarks) menuTraceLandmarks.addEventListener('click', function(){
     cancelAllEditModes();
     if(landmarksBox) landmarksBox.style.display = 'block';
@@ -1543,7 +1614,7 @@
     refreshMapEditMode();
   });
   if(btnCloseLandmarks) btnCloseLandmarks.addEventListener('click', function(){
-    landmarksBox.style.display = 'none';
+    if(landmarksBox) landmarksBox.style.display = 'none';
   });
 
   document.addEventListener('keydown', function(e){
@@ -1616,6 +1687,10 @@
   }
 
   function renderLandmarkList(){
+    // The landmarks-to-trace panel was removed from index.html upstream, so
+    // every one of these may be null. Unguarded, the first null throws and
+    // takes the rest of init with it — including switchSite(), which is what
+    // populates the buildings list and the Directions dropdowns.
     const listEl = document.getElementById('landmarkList');
     const countEl = document.getElementById('landmarkCount');
     const emptyEl = document.getElementById('landmarkEmptyNote');
@@ -1795,344 +1870,29 @@
   }
 
   // ================= ROUTING GRAPH (Dijkstra) =================
-  // Turns the raw walking-path polylines (siteData.paths) into a proper
-  // graph: every waypoint becomes a node, consecutive waypoints along one
-  // path become an edge. Waypoints from different paths that land close
-  // together — a real junction that was just digitized slightly apart —
-  // get merged into a single shared node, or the paths would only ever be
-  // a pile of disconnected segments instead of a network.
-  //
-  // Two distance thresholds matter here:
-  //  - JUNCTION_SNAP_METERS: how close two waypoints from different paths
-  //    need to be to count as "the same junction".
-  //  - CONNECT_THRESHOLD_METERS: how far a building/landmark is allowed to
-  //    be from the nearest graph node before routing gives up on the path
-  //    network entirely and falls back to a straight line.
-  const JUNCTION_SNAP_METERS = 20;
-  // A building's centroid can be tens of meters from its own edge (a
-  // stadium or sports ground especially), so this threshold has to be
-  // generous enough to cover "the nearest point on the building is near a
-  // path" rather than "the building's center is near a path". Tuned
-  // against this campus's actual data — see nearestNodeToFootprint below,
-  // which snaps from the closest footprint vertex, not the centroid.
-  const CONNECT_THRESHOLD_METERS = 45;
+  // The engine itself now lives in src/routing.js: graph construction with
+  // junction snapping and component stitching, bidirectional Dijkstra, and
+  // entry-point pairing. It was moved out verbatim — behaviour is unchanged
+  // and pinned by tests/routing.test.js. What stays here is only the wiring
+  // that binds it to this map's live state.
 
-  let graphCache = {}; // site -> { nodes:[{lat,lng}], adjacency:[[{to,dist}]] }
+  const JUNCTION_SNAP_METERS = Routing.JUNCTION_SNAP_METERS;
+  const CONNECT_THRESHOLD_METERS = Routing.CONNECT_THRESHOLD_METERS;
 
-  function metersBetween(lat1, lng1, lat2, lng2){
-    return L.latLng(lat1, lng1).distanceTo(L.latLng(lat2, lng2));
-  }
-
-  function buildGraphForSite(site){
-    const nodes = [];
-    const adjacency = [];
-
-    function findOrCreateNode(lat, lng){
-      for(let i = 0; i < nodes.length; i++){
-        if(metersBetween(nodes[i].lat, nodes[i].lng, lat, lng) <= JUNCTION_SNAP_METERS){
-          return i;
-        }
-      }
-      nodes.push({ lat, lng });
-      adjacency.push([]);
-      return nodes.length - 1;
-    }
-
-    function addEdge(i, j, dist, bridged){
-      if(i === j) return;
-      if(!adjacency[i].some(e => e.to === j)){
-        adjacency[i].push({ to: j, dist, bridged: !!bridged });
-        adjacency[j].push({ to: i, dist, bridged: !!bridged });
-      }
-    }
-
-    siteData.paths.forEach(function(p){
-      if(p.site !== site) return;
-      let prevIdx = null;
-      p.points.forEach(function(pt){
-        const idx = findOrCreateNode(pt[0], pt[1]);
-        if(prevIdx !== null && prevIdx !== idx){
-          const dist = metersBetween(
-            nodes[prevIdx].lat, nodes[prevIdx].lng, nodes[idx].lat, nodes[idx].lng
-          );
-          addEdge(prevIdx, idx, dist);
-        }
-        prevIdx = idx;
-      });
-    });
-
-    // Snap entry points into the graph: each entry point becomes a node
-    // connected to the nearest path node so routing can reach buildings
-    // and landmarks through their traced entrances.
-    function snapEntryToGraph(entry){
-      if(!entry || !entry.points || !entry.points.length) return;
-      entry.points.forEach(function(pt){
-        const entryIdx = findOrCreateNode(pt[0], pt[1]);
-        let bestNode = -1, bestDist = Infinity;
-        for(let i = 0; i < nodes.length; i++){
-          if(i === entryIdx) continue;
-          const d = metersBetween(nodes[i].lat, nodes[i].lng, pt[0], pt[1]);
-          if(d < bestDist){ bestDist = d; bestNode = i; }
-        }
-        if(bestNode >= 0 && bestDist <= CONNECT_THRESHOLD_METERS){
-          addEdge(entryIdx, bestNode, bestDist);
-        }
-      });
-    }
-
-    siteData.buildings.forEach(function(b){
-      if(b.site !== site) return;
-      if(b.entry && b.entry.points && b.entry.points.length){
-        snapEntryToGraph(b.entry);
-      } else {
-        // No entry point: add the building center to the graph so routing
-        // can reach it through the nearest path node.
-        const pts = b.points || [];
-        if(pts.length){
-          const cLat = pts.reduce(function(s,p){ return s+p[0]; },0)/pts.length;
-          const cLng = pts.reduce(function(s,p){ return s+p[1]; },0)/pts.length;
-          snapEntryToGraph({ points: [[cLat, cLng]] });
-        }
-      }
-    });
-    siteData.landmarks.forEach(function(l){
-      if(l.entry && l.entry.points && l.entry.points.length){
-        snapEntryToGraph(l.entry);
-      } else {
-        snapEntryToGraph({ points: [[l.lat, l.lng]] });
-      }
-    });
-
-    // You draw each path as a separate stroke — that's a tracing
-    // convenience, not a statement that they're unrelated. Stitch every
-    // disconnected fragment into one network per site: repeatedly find the
-    // closest pair of nodes belonging to two different clusters and bridge
-    // them, same idea as building a minimum-spanning connection between
-    // "islands", until the whole site is one graph. Bridged edges are
-    // flagged so a route that uses one can say so honestly.
-    function componentsOf(){
-      const compId = new Array(nodes.length).fill(-1);
-      let c = 0;
-      for(let i = 0; i < nodes.length; i++){
-        if(compId[i] !== -1) continue;
-        const stack = [i];
-        compId[i] = c;
-        while(stack.length){
-          const u = stack.pop();
-          adjacency[u].forEach(function(e){
-            if(compId[e.to] === -1){ compId[e.to] = c; stack.push(e.to); }
-          });
-        }
-        c++;
-      }
-      return { compId, count: c };
-    }
-
-    let { compId, count } = componentsOf();
-    let guard = nodes.length; // hard cap so a data oddity can't infinite-loop
-    while(count > 1 && guard-- > 0){
-      let best = null;
-      for(let i = 0; i < nodes.length; i++){
-        for(let j = i + 1; j < nodes.length; j++){
-          if(compId[i] === compId[j]) continue;
-          const d = metersBetween(nodes[i].lat, nodes[i].lng, nodes[j].lat, nodes[j].lng);
-          if(!best || d < best.d) best = { i: i, j: j, d: d };
-        }
-      }
-      if(!best) break;
-      addEdge(best.i, best.j, best.d, true);
-      ({ compId, count } = componentsOf());
-    }
-
-    return { nodes, adjacency };
-  }
+  let graphCache = {}; // site -> { nodes, adjacency }
 
   function getGraphForSite(site){
-    if(!graphCache[site]) graphCache[site] = buildGraphForSite(site);
+    // Passes the whole siteData: the graph now snaps building and landmark
+    // entry points in, so it needs the places, not just the paths.
+    if(!graphCache[site]) graphCache[site] = Routing.buildGraph(siteData, site);
     return graphCache[site];
   }
 
-  // Nearest graph node to an arbitrary lat/lng, within maxDist meters.
-  // Returns { index, dist } or null if nothing is close enough — this is
-  // what lets routing decide "there's no path network anywhere near this
-  // place" and fall back to a straight line instead of forcing a bad snap.
-  function nearestNode(graph, lat, lng, maxDist){
-    let best = null, bestDist = Infinity;
-    graph.nodes.forEach(function(n, i){
-      const d = metersBetween(n.lat, n.lng, lat, lng);
-      if(d < bestDist){ bestDist = d; best = i; }
-    });
-    if(best === null || bestDist > maxDist) return null;
-    return { index: best, dist: bestDist };
-  }
-
-  // Same idea as nearestNode, but checks every vertex of a footprint
-  // (building corners, or the single point for a landmark) instead of one
-  // fixed lat/lng — so routing snaps from whichever edge of a building is
-  // actually closest to the path network, not from its centroid.
-  function nearestNodeToFootprint(graph, footprint, maxDist){
-    let best = null, bestDist = Infinity, bestPoint = null;
-    (footprint || []).forEach(function(pt){
-      graph.nodes.forEach(function(n, i){
-        const d = metersBetween(n.lat, n.lng, pt[0], pt[1]);
-        if(d < bestDist){ bestDist = d; best = i; bestPoint = pt; }
-      });
-    });
-    if(best === null || bestDist > maxDist) return null;
-    return { index: best, dist: bestDist, point: bestPoint };
-  }
-
-  // Bidirectional Dijkstra: search outward from the start AND backward from
-  // the end at the same time, alternating whichever frontier is currently
-  // "cheaper" to expand, until the two searches meet. This explores a much
-  // smaller slice of the graph than a single one-sided search (which has to
-  // fan out until it stumbles onto the destination), and it's exact — the
-  // stopping rule below (stop once frontierF + frontierB >= best meeting
-  // distance found so far) guarantees the shortest path, not an
-  // approximation. Every path segment you've traced is one connected graph
-  // per site (see buildGraphForSite's component-stitching pass), so this
-  // runs over the whole network at once rather than per-segment.
-  function bidirectionalDijkstra(graph, startIdx, endIdx){
-    const n = graph.nodes.length;
-    if(startIdx === endIdx) return { path: [startIdx], dist: 0, bridgedHops: 0 };
-
-    const distF = new Array(n).fill(Infinity), prevF = new Array(n).fill(null), bridgedF = new Array(n).fill(false), visitedF = new Array(n).fill(false);
-    const distB = new Array(n).fill(Infinity), prevB = new Array(n).fill(null), bridgedB = new Array(n).fill(false), visitedB = new Array(n).fill(false);
-    distF[startIdx] = 0;
-    distB[endIdx] = 0;
-
-    let mu = Infinity, meetNode = -1;
-
-    function pickNext(dist, visited){
-      let u = -1, best = Infinity;
-      for(let i = 0; i < n; i++){
-        if(!visited[i] && dist[i] < best){ best = dist[i]; u = i; }
-      }
-      return u;
-    }
-
-    for(let iter = 0; iter < n; iter++){
-      const uF = pickNext(distF, visitedF);
-      const uB = pickNext(distB, visitedB);
-      if(uF === -1 && uB === -1) break;
-      const nextF = uF === -1 ? Infinity : distF[uF];
-      const nextB = uB === -1 ? Infinity : distB[uB];
-      if(nextF + nextB >= mu) break; // frontiers can't beat the best meeting point already found
-
-      if(nextF <= nextB && uF !== -1){
-        visitedF[uF] = true;
-        if(visitedB[uF] && distF[uF] + distB[uF] < mu){ mu = distF[uF] + distB[uF]; meetNode = uF; }
-        graph.adjacency[uF].forEach(function(edge){
-          if(visitedF[edge.to]) return;
-          const alt = distF[uF] + edge.dist;
-          if(alt < distF[edge.to]){
-            distF[edge.to] = alt; prevF[edge.to] = uF; bridgedF[edge.to] = !!edge.bridged;
-          }
-          if(visitedB[edge.to] && alt + distB[edge.to] < mu){ mu = alt + distB[edge.to]; meetNode = edge.to; }
-        });
-      } else if(uB !== -1){
-        visitedB[uB] = true;
-        if(visitedF[uB] && distB[uB] + distF[uB] < mu){ mu = distB[uB] + distF[uB]; meetNode = uB; }
-        graph.adjacency[uB].forEach(function(edge){
-          if(visitedB[edge.to]) return;
-          const alt = distB[uB] + edge.dist;
-          if(alt < distB[edge.to]){
-            distB[edge.to] = alt; prevB[edge.to] = uB; bridgedB[edge.to] = !!edge.bridged;
-          }
-          if(visitedF[edge.to] && alt + distF[edge.to] < mu){ mu = alt + distF[edge.to]; meetNode = edge.to; }
-        });
-      } else break;
-    }
-
-    if(meetNode === -1) return null;
-
-    // Forward half: start ... meetNode
-    const path = [];
-    let bridgedHops = 0;
-    let cur = meetNode;
-    while(cur !== null){
-      path.unshift(cur);
-      if(bridgedF[cur]) bridgedHops++;
-      cur = prevF[cur];
-    }
-    // Backward half: meetNode ... end (prevB[v] always points toward endIdx)
-    cur = meetNode;
-    while(cur !== endIdx){
-      const next = prevB[cur];
-      if(next === null) break;
-      if(bridgedB[cur]) bridgedHops++;
-      path.push(next);
-      cur = next;
-    }
-    return { path: path, dist: mu, bridgedHops: bridgedHops };
-  }
-
-  // Every distinct graph node close enough to count as reachable from a
-  // footprint (a building's real entry point(s), or its raw outline as a
-  // fallback), deduplicated by node index — if several footprint points
-  // snap to the same node, keep only the smallest snap distance. This is
-  // the candidate set a route is allowed to enter/leave through; it's
-  // deliberately NOT collapsed to a single "closest" point here, because
-  // the closest-in-isolation entrance isn't necessarily the one that
-  // pairs best with the other end (see bestEntryPointRoute below).
-  function footprintCandidateNodes(graph, footprint, maxDist){
-    const byNode = new Map(); // nodeIndex -> { index, dist, point }
-    (footprint || []).forEach(function(pt){
-      graph.nodes.forEach(function(n, i){
-        const d = metersBetween(n.lat, n.lng, pt[0], pt[1]);
-        if(d > maxDist) return;
-        const existing = byNode.get(i);
-        if(!existing || d < existing.dist){
-          byNode.set(i, { index: i, dist: d, point: pt });
-        }
-      });
-    });
-    return Array.from(byNode.values());
-  }
-
-  // The actual fix for "routes should stop at the nearest ENTRY POINT,
-  // not wander to whichever one happens to be closest to a path in
-  // isolation": a place can have several separate entrances (or a whole
-  // traced entry line/loop, e.g. a stadium track), and independently
-  // snapping each end of a route to its own single closest node can pick
-  // two entrances that are far apart from EACH OTHER, even though each
-  // looked optimal on its own — that's exactly how a route between two
-  // buildings with many connecting paths ends up taking an absurd detour.
-  // Instead: gather every plausible entrance-to-path connection point for
-  // BOTH ends (footprintCandidateNodes), then run Dijkstra across every
-  // start/end combination and keep whichever pairing minimizes the total
-  // cost (snap-in distance + network walk + snap-out distance). Footprints
-  // are small after deduplication (a handful of distinct nearby nodes), so
-  // this exhaustive pairing is cheap even though it's O(candidates²).
-  function bestEntryPointRoute(graph, fromFootprint, toFootprint, maxDist){
-    const startCandidates = footprintCandidateNodes(graph, fromFootprint, maxDist);
-    const endCandidates = footprintCandidateNodes(graph, toFootprint, maxDist);
-    if(!startCandidates.length || !endCandidates.length){
-      return { ok: false, reason: 'unsnapped' };
-    }
-
-    let best = null;
-    startCandidates.forEach(function(s){
-      endCandidates.forEach(function(e){
-        if(s.index === e.index){
-          const total = s.dist + e.dist;
-          if(!best || total < best.total){
-            best = { total: total, start: s, end: e, path: [s.index], dist: 0, bridgedHops: 0 };
-          }
-          return;
-        }
-        const result = bidirectionalDijkstra(graph, s.index, e.index);
-        if(!result) return;
-        const total = s.dist + result.dist + e.dist;
-        if(!best || total < best.total){
-          best = { total: total, start: s, end: e, path: result.path, dist: result.dist, bridgedHops: result.bridgedHops };
-        }
-      });
-    });
-
-    if(!best) return { ok: false, reason: 'disconnected' };
-    return Object.assign({ ok: true, reason: null }, best);
-  }
+  // Only the two entry points app.js actually calls are aliased. nearestNode,
+  // footprintCandidateNodes and bidirectionalDijkstra are internals of
+  // src/routing.js and are not re-exposed here.
+  const nearestNodeToFootprint = Routing.nearestNodeToFootprint;
+  const bestEntryPointRoute = Routing.bestEntryPointRoute;
 
   // All named places for the current site: every building (by centroid),
   // plus any landmark not already represented by a building — filtered to
@@ -2323,6 +2083,10 @@
     currentSite = site;
     tabCollege.classList.toggle('active', site === 'college');
     tabHostel.classList.toggle('active', site === 'hostel');
+    // Keep aria-pressed honest: the active tab is conveyed by colour alone
+    // otherwise, which says nothing to a screen reader.
+    tabCollege.setAttribute('aria-pressed', String(site === 'college'));
+    tabHostel.setAttribute('aria-pressed', String(site === 'hostel'));
 
     renderBoundary();
     renderPaths();
@@ -2353,19 +2117,36 @@
   const sidebarTabs = document.querySelectorAll('.sidebar-tab');
   const tabPanels = document.querySelectorAll('.tab-panel');
 
-  sidebarTabs.forEach(function(tab){
-    tab.addEventListener('click', function(){
-      const targetTab = tab.getAttribute('data-tab');
-      sidebarTabs.forEach(function(t){ t.classList.remove('active'); });
-      tab.classList.add('active');
-      tabPanels.forEach(function(panel){ panel.classList.remove('active'); });
-      if(targetTab === 'map'){
-        document.getElementById('mapPanel').classList.add('active');
-      } else {
-        document.getElementById('directionsPanel').classList.add('active');
-      }
+  function selectSidebarTab(tab){
+    const targetTab = tab.getAttribute('data-tab');
+
+    sidebarTabs.forEach(function(t){
+      const isActive = t === tab;
+      t.classList.toggle('active', isActive);
+      // Which tab is selected was conveyed by background colour alone.
+      t.setAttribute('aria-selected', String(isActive));
+      // Roving tabindex: arrow keys move between tabs, Tab leaves the tablist.
+      t.setAttribute('tabindex', isActive ? '0' : '-1');
+    });
+
+    tabPanels.forEach(function(panel){ panel.classList.remove('active'); });
+    document.getElementById(targetTab === 'map' ? 'mapPanel' : 'directionsPanel').classList.add('active');
+  }
+
+  sidebarTabs.forEach(function(tab, index){
+    tab.addEventListener('click', function(){ selectSidebarTab(tab); });
+
+    // Arrow-key navigation is the expected behaviour for a tablist.
+    tab.addEventListener('keydown', function(e){
+      if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      const next = sidebarTabs[(index + (e.key === 'ArrowRight' ? 1 : -1) + sidebarTabs.length) % sidebarTabs.length];
+      selectSidebarTab(next);
+      next.focus();
     });
   });
+
+  selectSidebarTab(document.querySelector('.sidebar-tab.active') || sidebarTabs[0]);
 
   // ================= INIT =================
   // The panel is now always a pure view (Directions + Buildings); there's
