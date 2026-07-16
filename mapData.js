@@ -3482,6 +3482,21 @@ window.BAKED_DATA = {
       ]
     },
     {
+      "id": "path_17842217004664856ba40840bd",
+      "name": "grandstaircase path 2",
+      "site": "college",
+      "points": [
+        [
+          26.842408151770258,
+          75.56552653676412
+        ],
+        [
+          26.84251163606729,
+          75.56584648462317
+        ]
+      ]
+    },
+    {
       "id": "path01",
       "name": "path 1",
       "site": "hostel",
