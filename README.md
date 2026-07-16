@@ -26,6 +26,9 @@ To run the test suite, either open `tests/index.html` in a browser, or:
 node tests/run.js     # no npm install — there are no dependencies
 ```
 
+No Node? The browser runner needs nothing at all, or see
+[CONTRIBUTING.md](CONTRIBUTING.md) for a Docker one-liner.
+
 ## Architecture
 
 ```

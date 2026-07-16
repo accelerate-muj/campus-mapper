@@ -43,6 +43,34 @@ node tests/run.js
 There is no `npm install`, because there is no `package.json`. That is
 deliberate — see "Project conventions" below.
 
+**No Node installed?** You don't need it. Either open `tests/index.html` in a
+browser — the suite runs there, against the same harness and the same test
+files — or use Docker:
+
+```bash
+# From the repo root. Runs the same command CI runs, on the same Node version.
+docker run --rm -v "$(pwd):/app" -w /app node:20-slim node tests/run.js
+
+# PowerShell:
+docker run --rm -v "${PWD}:/app" -w /app node:20-slim node tests/run.js
+```
+
+The `-v` mount is the part that matters: without it the container cannot see
+your files, and `node tests/run.js` will report that it can't find the file.
+
+The other two checks CI runs:
+
+```bash
+docker run --rm -v "$(pwd):/app" -w /app node:20-slim node .github/scripts/validate-data.js
+docker run --rm -v "$(pwd):/app" -w /app node:20-slim node build.js
+```
+
+One caveat when regenerating `mapData.js` from a Linux container on Windows:
+the container writes LF endings, so Git may briefly show the file as modified
+with an empty diff. That is `.gitattributes` doing its job — the content is
+unchanged. `git checkout -- mapData.js` clears it if the sync check already
+passes.
+
 CI runs the same suite, plus a validation pass over every committed `data/`
 entry, on every push and pull request.
 
