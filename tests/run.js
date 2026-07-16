@@ -10,7 +10,7 @@
 
 const harness = require('./harness.js');
 
-const TEST_FILES = ['./contribution-parser.test.js'];
+const TEST_FILES = ['./geo.test.js', './routing.test.js', './contribution-parser.test.js'];
 
 TEST_FILES.forEach((file) => require(file));
 

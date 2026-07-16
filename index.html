@@ -156,6 +156,9 @@
 </div>
 
 <script src="mapData.js"></script>
+<!-- Pure logic, no DOM or Leaflet: must load before app.js, which aliases them. -->
+<script src="src/geo.js"></script>
+<script src="src/routing.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
