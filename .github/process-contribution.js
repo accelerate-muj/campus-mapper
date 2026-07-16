@@ -71,37 +71,15 @@ fs.writeFileSync(targetFile, JSON.stringify(items, null, 2) + '\n');
 console.log('Wrote ' + items.length + ' items to ' + targetFile);
 
 const itemName = data.name || 'Unnamed';
-let branch = 'contribution/' + type + '/' + itemName;
-branch = branch.toLowerCase().replace(/[^a-z0-9._-]/g, '-').replace(/-+/g, '-').substring(0, 50);
+const commitMsg = 'Add ' + type + ': ' + itemName + ' (' + site + ')';
 
 run('git config user.name "github-actions[bot]"');
 run('git config user.email "github-actions[bot]@users.noreply.github.com"');
-
-const existingBranch = run('git rev-parse --verify ' + branch);
-if (existingBranch !== null) {
-  run('git checkout ' + branch);
-  run('git merge main --no-edit');
-} else {
-  run('git checkout -b ' + branch);
-}
-
 run('git add ' + targetFile);
-run('git commit -m "Add ' + type + ': ' + itemName + ' (' + site + ')"');
-run('git push origin ' + branch);
+run('git commit -m "' + commitMsg + '"');
+run('git push origin main');
 
-const existingPR = run('gh pr list --head ' + branch + ' --json number --jq ".[0].number"');
-if (!existingPR) {
-  const prTitle = 'Add ' + type + ': ' + itemName;
-  const prBody = 'Automated PR from issue #' + issueNum + '.\n\nAdds **' + itemName + '** to `' + targetFile + '`.\n\nCloses #' + issueNum;
-  const prResult = run('gh pr create --title "' + prTitle.replace(/"/g, '\\"') + '" --body "' + prBody.replace(/"/g, '\\"') + '" --head ' + branch + ' --base main');
-  if (prResult) {
-    comment('Contribution processed!\n\n- **Item:** ' + itemName + ' (' + type + ')\n- **File:** `' + targetFile + '`\n- **PR:** Created\n\nMaintainer will review and merge.');
-  } else {
-    run('git push origin ' + branch);
-    comment('Contribution data added to branch `' + branch + '` in file `' + targetFile + '`.\n\nPR creation failed (check repo Settings → Actions → "Allow GitHub Actions to create and approve pull requests"). Maintainer can merge manually.');
-  }
-} else {
-  comment('Contribution processed (PR updated)! **Item:** ' + itemName + ' (' + type + ') → PR #' + existingPR);
-}
+const itemNameClean = itemName.replace(/"/g, '\\"');
+comment('Contribution processed!\n\n- **Item:** ' + itemName + ' (' + type + ')\n- **File:** `' + targetFile + '`\n\nMerged to `main` automatically. Check the updated map!');
 
 console.log('Done.');
