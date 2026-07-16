@@ -241,5 +241,15 @@
       "closed": false
     },
     "floor": null
+  },
+  {
+    "id": "test_final",
+    "name": "Final Test",
+    "lat": 26.845,
+    "lng": 75.566,
+    "resolved": false,
+    "entry": null,
+    "category": "other",
+    "floor": null
   }
 ]
