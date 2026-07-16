@@ -3,15 +3,22 @@ name: Contribute
 on:
   issues:
     types: [opened]
-  workflow_dispatch:
-    inputs:
-      issue_number:
-        description: Issue number
-        required: true
 
 jobs:
   add:
     runs-on: ubuntu-latest
+    if: ${{ contains(github.event.issue.body, '## Map Contribution') }}
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-      - run: echo "checked out successfully"
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+      - run: node .github/process-contribution.js
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
