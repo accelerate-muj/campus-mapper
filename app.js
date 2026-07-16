@@ -500,13 +500,20 @@
   // ================= ZOOM LOCK =================
   const zoomLockBadge = document.getElementById('zoomLockBadge');
   function updateZoomLockUI(){
-    if(!zoomLockBadge) return;
     const zl = siteData[currentSite].zoomLocked;
     if(zl !== null){
-      zoomLockBadge.style.display = 'inline-flex';
-      zoomLockBadge.textContent = 'Zoom locked (' + zl.toFixed(1) + ')';
+      map.setMaxZoom(zl);
+      if(map.getZoom() > zl) map.setZoom(zl);
     } else {
-      zoomLockBadge.style.display = 'none';
+      map.setMaxZoom(20);
+    }
+    if(zoomLockBadge){
+      if(zl !== null){
+        zoomLockBadge.style.display = 'inline-flex';
+        zoomLockBadge.textContent = 'Zoom locked (' + zl.toFixed(1) + ')';
+      } else {
+        zoomLockBadge.style.display = 'none';
+      }
     }
   }
   function toggleZoomLock(){
@@ -534,6 +541,37 @@
     }
   }
   if(zoomLockBadge) zoomLockBadge.addEventListener('click', toggleZoomLock);
+
+  // ================= LOCK MAX ZOOM BUTTON =================
+  const btnLockMaxZoom = document.getElementById('btnLockMaxZoom');
+  function updateLockMaxZoomBtn(){
+    if(!btnLockMaxZoom) return;
+    const zl = siteData[currentSite].zoomLocked;
+    if(zl !== null){
+      btnLockMaxZoom.textContent = '🔓 Unlock Zoom (max ' + zl.toFixed(1) + ')';
+      btnLockMaxZoom.classList.add('on');
+    } else {
+      btnLockMaxZoom.textContent = '🔒 Lock Max Zoom';
+      btnLockMaxZoom.classList.remove('on');
+    }
+  }
+  if(btnLockMaxZoom) btnLockMaxZoom.addEventListener('click', function(){
+    const site = siteData[currentSite];
+    if(site.zoomLocked !== null){
+      site.zoomLocked = null;
+      map.setMaxZoom(20);
+      updateZoomLockUI();
+      updateLockMaxZoomBtn();
+      setStatus('Zoom unlocked.');
+    } else {
+      const z = Math.round(map.getZoom() * 10) / 10;
+      site.zoomLocked = z;
+      map.setMaxZoom(z);
+      updateZoomLockUI();
+      updateLockMaxZoomBtn();
+      setStatus('Max zoom locked to ' + z.toFixed(1) + '. Users cannot zoom in past this.');
+    }
+  });
 
   // No-op stub: boundary drawing can never be in progress anymore
   // (drawingBoundary is always false), but this is still called from a
@@ -1497,14 +1535,14 @@
   menuEditBuilding.addEventListener('click', startEditBuilding);
   menuEditPath.addEventListener('click', startEditPath);
   menuEditEntry.addEventListener('click', startSelectEntryTarget);
-  menuTraceLandmarks.addEventListener('click', function(){
+  if(menuTraceLandmarks) menuTraceLandmarks.addEventListener('click', function(){
     cancelAllEditModes();
-    landmarksBox.style.display = 'block';
+    if(landmarksBox) landmarksBox.style.display = 'block';
     expandPanelOnMobile();
-    landmarksBox.scrollIntoView({ block: 'nearest' });
+    if(landmarksBox) landmarksBox.scrollIntoView({ block: 'nearest' });
     refreshMapEditMode();
   });
-  btnCloseLandmarks.addEventListener('click', function(){
+  if(btnCloseLandmarks) btnCloseLandmarks.addEventListener('click', function(){
     landmarksBox.style.display = 'none';
   });
 
@@ -1581,14 +1619,14 @@
     const listEl = document.getElementById('landmarkList');
     const countEl = document.getElementById('landmarkCount');
     const emptyEl = document.getElementById('landmarkEmptyNote');
-    listEl.innerHTML = '';
+    if(listEl) listEl.innerHTML = '';
 
     const pending = siteData.landmarks.filter(l => !l.resolved);
-    countEl.textContent = pending.length ? '(' + pending.length + ')' : '';
-    emptyEl.style.display = pending.length ? 'none' : 'block';
-    menuLandmarkBadge.textContent = pending.length ? String(pending.length) : '';
+    if(countEl) countEl.textContent = pending.length ? '(' + pending.length + ')' : '';
+    if(emptyEl) emptyEl.style.display = pending.length ? 'none' : 'block';
+    if(menuLandmarkBadge) menuLandmarkBadge.textContent = pending.length ? String(pending.length) : '';
 
-    pending.forEach(function(lm){
+    if(listEl) pending.forEach(function(lm){
       const li = document.createElement('li');
       const nameSpan = document.createElement('span');
       nameSpan.className = 'lm-name';
@@ -2306,6 +2344,7 @@
     }
     applyCompassLock();
     updateZoomLockUI();
+    updateLockMaxZoomBtn();
   }
   tabCollege.addEventListener('click', function(){ switchSite('college'); });
   tabHostel.addEventListener('click', function(){ switchSite('hostel'); });
@@ -2344,5 +2383,6 @@
     map.setView([avgLat, avgLng], 17);
   }
   switchSite('college');
+  updateLockMaxZoomBtn();
 
 })();

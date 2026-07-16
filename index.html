@@ -29,7 +29,6 @@
     <button id="menuAddBuilding" class="menu-item" type="button">🏗️ <span>Add Building (Polygon)</span></button>
     <button id="menuAddPath" class="menu-item" type="button">🛤️ <span>Add Path</span></button>
     <button id="menuAddEntry" class="menu-item" type="button">🚪 <span>Add Entry Point</span></button>
-    <button id="menuTraceLandmarks" class="menu-item" type="button">🧭 <span>Trace Landmarks</span> <span id="menuLandmarkBadge" class="menu-badge"></span></button>
     <div class="menu-divider"></div>
     <div class="menu-section-label">Edit existing</div>
     <button id="menuEditLandmark" class="menu-item" type="button">📌 <span>Edit Landmark</span></button>
@@ -52,17 +51,11 @@
     <button class="sidebar-tab active" data-tab="map">Map</button>
     <button class="sidebar-tab" data-tab="directions">Directions</button>
   </div>
+  <div class="tool-row" style="margin-bottom:10px;">
+    <button id="btnLockMaxZoom" class="btn" type="button" style="font-size:12px;">🔒 Lock Max Zoom</button>
+  </div>
 
   <div class="tab-panel active" id="mapPanel">
-    <div class="section-card buildings-box" id="landmarksBox" style="display:none;">
-      <h2>
-        Landmarks to trace <span id="landmarkCount" style="color:var(--text-dim); font-weight:400;"></span>
-        <button id="btnCloseLandmarks" class="expand-btn" style="float:right;" title="Close">✕</button>
-      </h2>
-      <ul id="landmarkList"></ul>
-      <div id="landmarkEmptyNote" class="empty-note" style="display:none;">All landmarks traced</div>
-    </div>
-
     <div class="section-card buildings-box" id="buildingsSection">
       <h2>Buildings <span id="buildingCount" style="color:var(--text-dim); font-weight:400;"></span></h2>
       <div id="buildingGroups"></div>
