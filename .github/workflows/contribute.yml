@@ -3,13 +3,15 @@ name: Contribute
 on:
   issues:
     types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number
+        required: true
 
 jobs:
   add:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: echo "ready"
+      - run: echo "checked out successfully"
