@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Mapper — Tests</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin: 0; padding: 24px; }
+  h1 { font-size: 18px; margin: 0 0 16px; }
+  #summary { padding: 12px 16px; border-radius: 6px; font-weight: 600; margin-bottom: 16px; }
+  #summary.pass { background: #1a7f37; color: #fff; }
+  #summary.fail { background: #cf222e; color: #fff; }
+  ol { padding-left: 24px; margin: 0; }
+  li { margin-bottom: 4px; }
+  li.pass::marker { content: "PASS  "; color: #1a7f37; font-weight: 700; }
+  li.fail::marker { content: "FAIL  "; color: #cf222e; font-weight: 700; }
+  pre { background: rgba(127,127,127,.14); padding: 8px 12px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<h1>Campus Mapper — test suite</h1>
+<div id="summary">Running…</div>
+<ol id="results"></ol>
+
+<!-- Load order matters: harness, then modules under test, then the tests. -->
+<script src="harness.js"></script>
+<script src="../.github/scripts/contribution-parser.js"></script>
+<script src="contribution-parser.test.js"></script>
+
+<script>
+(function () {
+  var harness = window.TestHarness;
+  var result = harness.run();
+
+  var failuresByName = {};
+  result.failures.forEach(function (f) { failuresByName[f.name] = f; });
+
+  var list = document.getElementById('results');
+  harness.tests.forEach(function (test) {
+    var failure = failuresByName[test.name];
+    var li = document.createElement('li');
+    li.className = failure ? 'fail' : 'pass';
+    li.textContent = test.name;
+
+    if (failure) {
+      var pre = document.createElement('pre');
+      pre.textContent = failure.message;
+      li.appendChild(pre);
+    }
+    list.appendChild(li);
+  });
+
+  var summary = document.getElementById('summary');
+  summary.className = result.failed === 0 ? 'pass' : 'fail';
+  summary.textContent = result.passed + ' passed, ' + result.failed + ' failed, ' + result.total + ' total';
+
+  // Read by the browser-based runner when Node is unavailable.
+  window.__TEST_RESULT__ = result;
+})();
+</script>
+
+</body>
+</html>
