@@ -124,6 +124,8 @@
   .btn:hover{ border-color:var(--accent); }
   .btn.on{ background:var(--accent); color:#0d1414; border-color:var(--accent); }
   .btn.danger:hover{ border-color:var(--danger); }
+  .btn-success{ background:var(--accent); color:#0d1414; border-color:var(--accent); }
+  .btn-success:hover{ background:#5cc4b8; border-color:#5cc4b8; }
   .btn.full{ width:100%; }
   .btn:disabled{ opacity:0.35; cursor:not-allowed; }
 
@@ -150,6 +152,26 @@
   }
   #buildingList li .x:hover{ color:var(--danger); }
   .empty-note{ font-size:12px; color:var(--text-dim); font-style:italic; }
+
+  /* Kanban-style building groups */
+  .kanban-group{ margin-bottom:10px; }
+  .kanban-group-header{
+    display:flex; align-items:center; gap:6px;
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--text-dim); padding:6px 0 4px; cursor:pointer; user-select:none;
+  }
+  .kanban-group-header .building-cat-dot{ flex:none; }
+  .kanban-count{
+    margin-left:auto; font-size:10px; font-weight:700;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:1px 6px; color:var(--text-dim);
+  }
+  .building-list{ list-style:none; margin:0; padding:0; max-height:180px; overflow-y:auto; }
+  .building-list li{
+    padding:5px 8px; border-radius:6px; font-size:12.5px; cursor:pointer;
+    border:1px solid transparent; margin-bottom:2px;
+  }
+  .building-list li:hover{ background:var(--panel-2); border-color:var(--line); }
 
   /* Landmark list — imported points waiting to be traced into buildings */
   #landmarkList{ list-style:none; margin:0; padding:0; max-height:180px; overflow-y:auto; }

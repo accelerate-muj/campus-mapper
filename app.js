@@ -80,17 +80,13 @@
     return 'other';
   }
 
-  function defaultSite(){ return { boundary: null, locked: true, finalized: false }; }
+  function defaultSite(){ return { boundary: null, locked: true, finalized: false, zoomLocked: null }; }
 
   function cloneSite(s, legacyGlobalFinalized){
     let finalized;
     if(s && s.finalized !== undefined){
       finalized = !!s.finalized;
     } else if(legacyGlobalFinalized !== undefined){
-      // Migrating an old save that only had one global `finalized` flag for
-      // both sites. Only carry it over to a site that actually has a
-      // boundary saved — a site with no boundary yet was never really
-      // "finalized", whatever the old global flag said.
       finalized = !!legacyGlobalFinalized && !!(s && s.boundary);
     } else {
       finalized = false;
@@ -98,7 +94,8 @@
     return {
       boundary: s && s.boundary ? s.boundary : null,
       locked: s && s.locked !== undefined ? s.locked : true,
-      finalized: finalized
+      finalized: finalized,
+      zoomLocked: (s && typeof s.zoomLocked === 'number') ? s.zoomLocked : null
     };
   }
 
@@ -308,6 +305,30 @@
   const pathsLayer = L.layerGroup().addTo(map);
   const entryLayer = L.layerGroup().addTo(map);
 
+  // ================= MAP EDIT MODE (view vs edit) =================
+  // When no editing tool is active and the contribute menu is closed,
+  // the map is in "view mode": buildings render as small center-point
+  // markers (not full polygons), paths and entry markers are hidden.
+  // When any tool is active OR the contribute menu is open, everything
+  // renders normally for editing.
+  let mapEditMode = false;
+
+  function isAnyToolActive(){
+    return !!(drawingBuilding || placingEntryFor || selectingEntryTarget ||
+              drawingPath || placingNewLandmark);
+  }
+
+  function refreshMapEditMode(){
+    const wasEditing = mapEditMode;
+    mapEditMode = isAnyToolActive() || contributeMenu.classList.contains('show');
+    if(mapEditMode !== wasEditing){
+      renderBuildings();
+      renderPaths();
+      renderEntryMarkers();
+      renderLandmarks();
+    }
+  }
+
   // ---------- Mobile panel collapse ----------
   const toolPanel = document.getElementById('toolPanel');
   const panelToggle = document.getElementById('panelToggle');
@@ -358,6 +379,7 @@
   btnContribute.addEventListener('click', function(e){
     e.stopPropagation();
     contributeMenu.classList.toggle('show');
+    refreshMapEditMode();
   });
   document.addEventListener('click', function(e){
     if(!e.target.closest('.contribute-widget')) closeContributeMenu();
@@ -383,7 +405,7 @@
   const btnBuildingUndo = document.getElementById('btnBuildingUndo');
   const btnBuildingFinish = document.getElementById('btnBuildingFinish');
   const btnBuildingCancel = document.getElementById('btnBuildingCancel');
-  const buildingListEl = document.getElementById('buildingList');
+  const buildingGroupsEl = document.getElementById('buildingGroups');
   const buildingCountEl = document.getElementById('buildingCount');
   const emptyNote = document.getElementById('emptyNote');
 
@@ -483,6 +505,43 @@
     }
   }
 
+  // ================= ZOOM LOCK =================
+  const zoomLockBadge = document.getElementById('zoomLockBadge');
+  function updateZoomLockUI(){
+    const zl = siteData[currentSite].zoomLocked;
+    if(zl !== null){
+      zoomLockBadge.style.display = 'inline-flex';
+      zoomLockBadge.textContent = 'Zoom locked (' + zl.toFixed(1) + ')';
+    } else {
+      zoomLockBadge.style.display = 'none';
+    }
+  }
+  function toggleZoomLock(){
+    const site = siteData[currentSite];
+    if(site.zoomLocked !== null){
+      site.zoomLocked = null;
+      releaseBoundaryConstraint();
+      const stored = site.boundary;
+      if(stored && site.locked){
+        applyBoundaryConstraint(boundsFromCorners(cornersFromStored(stored)));
+      }
+      updateZoomLockUI();
+      setStatus('Zoom unlocked for ' + currentSite + '.');
+    } else {
+      const val = window.prompt('Lock zoom to what level? (current: ' + map.getZoom().toFixed(1) + ')', map.getZoom().toFixed(1));
+      if(val === null) return;
+      const z = parseFloat(val);
+      if(isNaN(z) || z < 2 || z > 20){ setStatus('Invalid zoom level. Must be 2-20.'); return; }
+      site.zoomLocked = Math.round(z * 10) / 10;
+      map.setMinZoom(site.zoomLocked);
+      map.setMaxZoom(site.zoomLocked);
+      map.setZoom(site.zoomLocked);
+      updateZoomLockUI();
+      setStatus('Zoom locked to ' + site.zoomLocked.toFixed(1) + ' for ' + currentSite + '. Click the badge to unlock.');
+    }
+  }
+  zoomLockBadge.addEventListener('click', toggleZoomLock);
+
   // No-op stub: boundary drawing can never be in progress anymore
   // (drawingBoundary is always false), but this is still called from a
   // few guard checks (site switching, building-draw start, etc.) so it
@@ -571,17 +630,63 @@
 
   function renderPaths(){
     pathsLayer.clearLayers();
+    if(!mapEditMode) return;
     siteData.paths.forEach(function(p){
       if(p.site !== currentSite) return;
       const line = L.polyline(p.points, {
-        color: '#93a1ab', weight: 2, opacity: 0.55, dashArray: '1,6', lineCap: 'round'
+        color: '#6aa9e0', weight: 2.5, opacity: 0.8, dashArray: '6,4', lineCap: 'round'
       }).bindTooltip(p.name || 'Path', { sticky: true }).addTo(pathsLayer);
       line.on('click', function(ev){
-        if(!drawingPath) return; // only clickable-to-delete while Edit Paths mode is active
+        if(!drawingPath) return;
         L.DomEvent.stopPropagation(ev);
         deletePath(p.id);
       });
     });
+  }
+
+  // ================= PATH SNAP-TO =================
+  // Collect every endpoint of every path on the current site so new
+  // path points snap to existing ones, treating the whole network as
+  // one connected mega-path instead of disconnected fragments.
+  const PATH_SNAP_METERS = 15;
+  let snapIndicators = [];
+
+  function getPathEndpoints(){
+    const endpoints = [];
+    siteData.paths.forEach(function(p){
+      if(p.site !== currentSite || !p.points.length) return;
+      endpoints.push({ lat: p.points[0][0], lng: p.points[0][1], pathId: p.id, end: 'start' });
+      if(p.points.length > 1){
+        const last = p.points[p.points.length - 1];
+        endpoints.push({ lat: last[0], lng: last[1], pathId: p.id, end: 'end' });
+      }
+    });
+    return endpoints;
+  }
+
+  function snapToExistingPath(latlng){
+    const endpoints = getPathEndpoints();
+    let best = null, bestDist = Infinity;
+    endpoints.forEach(function(ep){
+      const d = metersBetween(latlng.lat, latlng.lng, ep.lat, ep.lng);
+      if(d < bestDist){ bestDist = d; best = ep; }
+    });
+    if(best && bestDist <= PATH_SNAP_METERS){
+      return { lat: best.lat, lng: best.lng, dist: bestDist };
+    }
+    return null;
+  }
+
+  function clearSnapIndicators(){
+    snapIndicators.forEach(function(m){ map.removeLayer(m); });
+    snapIndicators = [];
+  }
+
+  function showSnapIndicator(lat, lng){
+    const m = L.circleMarker([lat, lng], {
+      radius: 8, color: '#e0c145', fillColor: '#e0c145', fillOpacity: 0.4, weight: 2, dashArray: '3,3'
+    }).addTo(map);
+    snapIndicators.push(m);
   }
 
   // ================= BUILDING DRAWING (point-driven) =================
@@ -607,6 +712,7 @@
     map.getContainer().classList.add('drawing-cursor');
     buildingActions.style.display = 'flex';
     setStatus('Click to place building corner points. Click the first point again (or hit Finish) to close it.', true);
+    refreshMapEditMode();
   }
 
   // Launched from a landmark's ▸ expand button (map popup or panel list).
@@ -637,6 +743,7 @@
     map.getContainer().classList.remove('drawing-cursor');
     buildingActions.style.display = 'none';
     unfreezeRotationGesturesAfterDrawing();
+    refreshMapEditMode();
   }
 
   function cancelBuildingDraw(){
@@ -683,6 +790,7 @@
     entryActions.style.display = 'flex';
     map.getContainer().classList.add('drawing-cursor');
     setEntryPlacementStatus(target);
+    refreshMapEditMode();
   }
 
   function setEntryPlacementStatus(target){
@@ -698,6 +806,7 @@
     placingEntryFor = null;
     entryActions.style.display = 'none';
     map.getContainer().classList.remove('drawing-cursor');
+    refreshMapEditMode();
     setStatus('Done placing entry points.');
   }
 
@@ -821,6 +930,7 @@
 
   function renderEntryMarkers(){
     entryLayer.clearLayers();
+    if(!mapEditMode) return;
     function drawEntry(place, label){
       const entry = place.entry;
       if(!entry || !entry.points || !entry.points.length) return;
@@ -878,11 +988,19 @@
     if(placingEntryFor){ placeEntryAt(e.latlng); return; }
     if(drawingBoundary) return; // boundary uses drag, not click
     if(drawingPath){
-      currentPathPoints.push(e.latlng);
-      const marker = L.circleMarker(e.latlng, {
-        radius: VERTEX_RADIUS, color: '#e0c145', fillColor: '#e0c145', fillOpacity: 1, weight: 2
+      const snap = snapToExistingPath(e.latlng);
+      const finalLatlng = snap ? L.latLng(snap.lat, snap.lng) : e.latlng;
+      currentPathPoints.push(finalLatlng);
+      const marker = L.circleMarker(finalLatlng, {
+        radius: VERTEX_RADIUS, color: snap ? '#e0c145' : '#e0c145',
+        fillColor: snap ? '#e0c145' : '#e0c145', fillOpacity: 1, weight: 2
       }).addTo(map);
       pathVertexMarkers.push(marker);
+      clearSnapIndicators();
+      if(snap){
+        showSnapIndicator(snap.lat, snap.lng);
+        setStatus('Snapped to existing path endpoint (' + Math.round(snap.dist) + 'm). Points connected!', true);
+      }
       updatePathPreview();
       return;
     }
@@ -1042,6 +1160,7 @@
     if(selectingEntryTarget) cancelSelectEntryTarget();
     if(drawingPath) cancelPathEdit();
     if(placingNewLandmark) cancelAddLandmark();
+    refreshMapEditMode();
   }
 
   // ---------------- Add Landmark ----------------
@@ -1057,12 +1176,14 @@
     map.getContainer().classList.add('drawing-cursor');
     landmarkPlaceActions.style.display = 'flex';
     setStatus('Click the map to drop a new landmark pin.', true);
+    refreshMapEditMode();
   }
 
   function cancelAddLandmark(){
     placingNewLandmark = false;
     landmarkPlaceActions.style.display = 'none';
     map.getContainer().classList.remove('drawing-cursor');
+    refreshMapEditMode();
   }
 
   function handleNewLandmarkClick(latlng){
@@ -1106,11 +1227,13 @@
     selectingEntryTarget = true;
     map.getContainer().classList.add('drawing-cursor');
     setStatus('Click a building on the map to set or edit its entrance. (Landmarks not yet traced into a building can get one from Contribute → Trace Landmarks.)', true);
+    refreshMapEditMode();
   }
 
   function cancelSelectEntryTarget(){
     selectingEntryTarget = false;
     map.getContainer().classList.remove('drawing-cursor');
+    refreshMapEditMode();
   }
 
   // ---------------- Edit Paths ----------------
@@ -1133,11 +1256,13 @@
     map.getContainer().classList.add('drawing-cursor');
     pathActions.style.display = 'flex';
     setStatus('Click to trace a new path (2+ points), then Finish. Click an existing dashed path to delete it instead.', true);
+    refreshMapEditMode();
   }
 
   function clearTempPathVertexLayers(){
     pathVertexMarkers.forEach(m => map.removeLayer(m));
     pathVertexMarkers = [];
+    clearSnapIndicators();
     if(pathPreviewLine){ map.removeLayer(pathPreviewLine); pathPreviewLine = null; }
   }
 
@@ -1148,6 +1273,7 @@
     map.getContainer().classList.remove('drawing-cursor');
     pathActions.style.display = 'none';
     unfreezeRotationGesturesAfterDrawing();
+    refreshMapEditMode();
   }
 
   function cancelPathEdit(){
@@ -1213,6 +1339,7 @@
     landmarksBox.style.display = 'block';
     expandPanelOnMobile();
     landmarksBox.scrollIntoView({ block: 'nearest' });
+    refreshMapEditMode();
   });
   btnCloseLandmarks.addEventListener('click', function(){
     landmarksBox.style.display = 'none';
@@ -1320,10 +1447,7 @@
   }
 
   // ================= RENDER BUILDINGS + LIST =================
-  const buildingPolygons = {}; // id -> layer
-  const categoryFilterEl = document.getElementById('categoryFilter');
   const categoryLegendEl = document.getElementById('categoryLegend');
-  let activeCategoryFilter = 'all';
 
   function goToBuilding(b, poly){
     const bounds = poly ? poly.getBounds() : L.latLngBounds(b.points.map(p => L.latLng(p[0], p[1])));
@@ -1337,26 +1461,6 @@
   // viewing Hostel, even though the mask itself was painted correctly.)
   function currentSiteBuildings(){
     return siteData.buildings.filter(b => b.site === currentSite);
-  }
-
-  function populateCategoryFilter(){
-    const present = new Set();
-    currentSiteBuildings().forEach(b => { if(b.category) { getOrMakeCategory(b.category); present.add(b.category); } });
-    siteData.landmarks.forEach(l => { if(l.category) { getOrMakeCategory(l.category); present.add(l.category); } });
-    present.add('other');
-    const prev = activeCategoryFilter;
-    categoryFilterEl.innerHTML = '';
-    const allOpt = document.createElement('option');
-    allOpt.value = 'all'; allOpt.textContent = 'All categories';
-    categoryFilterEl.appendChild(allOpt);
-    CATEGORIES.forEach(function(cat){
-      if(!present.has(cat.id)) return;
-      const opt = document.createElement('option');
-      opt.value = cat.id; opt.textContent = cat.label;
-      categoryFilterEl.appendChild(opt);
-    });
-    activeCategoryFilter = (prev === 'all' || present.has(prev)) ? prev : 'all';
-    categoryFilterEl.value = activeCategoryFilter;
   }
 
   function renderCategoryLegend(list){
@@ -1379,64 +1483,80 @@
 
   function renderBuildings(){
     buildingsLayer.clearLayers();
-    buildingListEl.innerHTML = '';
+    buildingGroupsEl.innerHTML = '';
 
     const all = currentSiteBuildings();
-    const list = activeCategoryFilter === 'all' ? all : all.filter(b => (b.category || 'other') === activeCategoryFilter);
+    const list = all;
 
-    list.forEach(function(b, idx){
-      const latlngs = b.points.map(p => L.latLng(p[0], p[1]));
-      const cat = categoryOf(b.category);
-      const poly = L.polygon(latlngs, {
-        color: cat.color, weight: 2, fillColor: cat.color, fillOpacity: 0.28
-      }).addTo(buildingsLayer);
-      const displayName = b.name || ('Building ' + (idx + 1));
-      poly.bindTooltip(displayName + ' · ' + cat.label, { sticky: true });
-      poly.on('click', function(){
-        if(selectingEntryTarget){
-          cancelSelectEntryTarget();
-          startEntryPlacement('building', b.id);
-          return;
-        }
-        goToBuilding(b, poly);
+    if(mapEditMode){
+      list.forEach(function(b, idx){
+        const latlngs = b.points.map(p => L.latLng(p[0], p[1]));
+        const cat = categoryOf(b.category);
+        const poly = L.polygon(latlngs, {
+          color: cat.color, weight: 2, fillColor: cat.color, fillOpacity: 0.28
+        }).addTo(buildingsLayer);
+        const displayName = b.name || ('Building ' + (idx + 1));
+        poly.bindTooltip(displayName + ' · ' + cat.label, { sticky: true });
+        poly.on('click', function(){
+          if(selectingEntryTarget){
+            cancelSelectEntryTarget();
+            startEntryPlacement('building', b.id);
+            return;
+          }
+          goToBuilding(b, poly);
+        });
       });
-    });
+    } else {
+      list.forEach(function(b, idx){
+        const latlngs = b.points.map(p => L.latLng(p[0], p[1]));
+        const cat = categoryOf(b.category);
+        const center = L.latLngBounds(latlngs).getCenter();
+        const displayName = b.name || ('Building ' + (idx + 1));
+        L.circleMarker(center, {
+          radius: 5, color: cat.color, fillColor: cat.color, fillOpacity: 0.85, weight: 1
+        }).bindTooltip(displayName + ' · ' + cat.label, { sticky: true })
+          .on('click', function(){ goToBuilding(b); })
+          .addTo(buildingsLayer);
+      });
+    }
 
     buildingCountEl.textContent = list.length ? '(' + list.length + ')' : '';
     emptyNote.style.display = list.length ? 'none' : 'block';
     renderCategoryLegend(all);
 
+    var grouped = {};
     list.forEach(function(b, idx){
-      const baseName = b.name || ('Building ' + (idx + 1));
-      const cat = categoryOf(b.category);
-      const li = document.createElement('li');
-      const label = document.createElement('span');
-      label.style.display = 'flex';
-      label.style.alignItems = 'center';
-      label.style.overflow = 'hidden';
-      const dot = document.createElement('span');
-      dot.className = 'building-cat-dot';
-      dot.style.background = cat.color;
-      label.appendChild(dot);
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = baseName;
-      nameSpan.style.overflow = 'hidden';
-      nameSpan.style.textOverflow = 'ellipsis';
-      nameSpan.style.whiteSpace = 'nowrap';
-      label.appendChild(nameSpan);
-      li.appendChild(label);
-      li.addEventListener('click', function(){
-        const latlngs = b.points.map(p => L.latLng(p[0], p[1]));
-        map.fitBounds(L.latLngBounds(latlngs), { maxZoom: map.getMaxZoom() });
+      var catId = b.category || 'other';
+      if(!grouped[catId]) grouped[catId] = [];
+      grouped[catId].push({ b: b, idx: idx });
+    });
+
+    Object.keys(grouped).forEach(function(catId){
+      var cat = categoryOf(catId);
+      var section = document.createElement('div');
+      section.className = 'kanban-group';
+      var header = document.createElement('div');
+      header.className = 'kanban-group-header';
+      header.innerHTML = '<span class="building-cat-dot" style="background:' + cat.color + '"></span>' +
+        '<span>' + cat.label + '</span>' +
+        '<span class="kanban-count">' + grouped[catId].length + '</span>';
+      var ul = document.createElement('ul');
+      ul.className = 'building-list';
+      grouped[catId].forEach(function(item){
+        var baseName = item.b.name || ('Building ' + (item.idx + 1));
+        var li = document.createElement('li');
+        li.textContent = baseName;
+        li.addEventListener('click', function(){
+          var latlngs = item.b.points.map(function(p){ return L.latLng(p[0], p[1]); });
+          map.fitBounds(L.latLngBounds(latlngs), { maxZoom: map.getMaxZoom() });
+        });
+        ul.appendChild(li);
       });
-      buildingListEl.appendChild(li);
+      section.appendChild(header);
+      section.appendChild(ul);
+      buildingGroupsEl.appendChild(section);
     });
   }
-
-  categoryFilterEl.addEventListener('change', function(){
-    activeCategoryFilter = categoryFilterEl.value;
-    renderBuildings();
-  });
 
   // ================= DIRECTIONS (straight-line, within current site) =================
   // There's no traced walking-path network for the whole campus, so this
@@ -1952,7 +2072,6 @@
 
     renderBoundary();
     renderPaths();
-    populateCategoryFilter();
     renderBuildings();
     clearRoute();
     populateDirectionSelects();
@@ -1970,8 +2089,8 @@
       setStatus('Showing ' + site + '. No boundary set yet — draw one to lock the view.');
     }
     applyCompassLock();
+    updateZoomLockUI();
   }
-
   tabCollege.addEventListener('click', function(){ switchSite('college'); });
   tabHostel.addEventListener('click', function(){ switchSite('hostel'); });
 

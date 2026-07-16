@@ -45,6 +45,7 @@
   <div class="status-strip" id="statusStrip">
     <span id="finalizedBadge" class="status-pill">Boundary set</span>
     <span id="compassLockedBadge" class="status-pill">Direction locked</span>
+    <span id="zoomLockBadge" class="status-pill" style="display:none; cursor:pointer;" title="Click to unlock zoom">Zoom locked</span>
   </div>
 
   <div class="sidebar-tabs">
@@ -64,8 +65,7 @@
 
     <div class="section-card buildings-box" id="buildingsSection">
       <h2>Buildings <span id="buildingCount" style="color:var(--text-dim); font-weight:400;"></span></h2>
-      <select id="categoryFilter" class="cat-filter"></select>
-      <ul id="buildingList"></ul>
+      <div id="buildingGroups"></div>
       <div id="emptyNote" class="empty-note">No buildings yet.</div>
       <div id="categoryLegend" class="cat-legend"></div>
     </div>
