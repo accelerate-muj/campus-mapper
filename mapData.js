@@ -1072,7 +1072,7 @@ window.BAKED_DATA = {
       "name": "Nescafe",
       "lat": 26.842633930924755,
       "lng": 75.56535587592525,
-      "resolved": false,
+      "resolved": true,
       "entry": null,
       "category": "dining",
       "floor": null
