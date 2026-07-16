@@ -2057,6 +2057,16 @@ window.BAKED_DATA = {
       "floor": null
     },
     {
+      "id": "lm_1784216254294a5d719450cba3",
+      "name": "Basketball Court",
+      "lat": 26.845704932549772,
+      "lng": 75.56639764287769,
+      "resolved": false,
+      "entry": null,
+      "category": "sports",
+      "floor": null
+    },
+    {
       "id": "lm01",
       "name": "B-11 & B-12",
       "lat": 26.843337,
@@ -3453,6 +3463,21 @@ window.BAKED_DATA = {
         [
           26.84152956,
           75.56421655
+        ]
+      ]
+    },
+    {
+      "id": "path_17842121160580b895e5a148e48",
+      "name": "grand staircase path",
+      "site": "college",
+      "points": [
+        [
+          26.842408151770258,
+          75.56552653676412
+        ],
+        [
+          26.842300104568338,
+          75.56523305275631
         ]
       ]
     },
