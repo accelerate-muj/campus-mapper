@@ -7,7 +7,13 @@ on:
 jobs:
   add:
     runs-on: ubuntu-latest
-    if: ${{ contains(github.event.issue.body, '## Map Contribution') }}
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Checked out"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node .github/process-contribution.js
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
