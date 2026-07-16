@@ -241,5 +241,15 @@
     "resolved": true,
     "entry": null,
     "floor": null
+  },
+  {
+    "id": "lm_1784224401961f5ee21211714b8",
+    "name": "test",
+    "lat": 26.842110603472523,
+    "lng": 75.56291785585684,
+    "resolved": true,
+    "entry": null,
+    "category": "hostel",
+    "floor": null
   }
 ]
