@@ -255,17 +255,15 @@
   const contributionDesc = document.getElementById('contributionDesc');
   const contributionJSON = document.getElementById('contributionJSON');
   const btnCopyContribution = document.getElementById('btnCopyContribution');
-  const btnOpenGitHub = document.getElementById('btnOpenGitHub');
+  const btnSubmitContribution = document.getElementById('btnSubmitContribution');
   const btnCloseContribution = document.getElementById('btnCloseContribution');
 
   function showContributionPreview(type, name, jsonSnippet, site, filePath){
     const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
     contributionTitle.textContent = 'Submit: New ' + typeLabel;
-    contributionDesc.textContent = 'Copy the JSON below and add it to ' + (filePath || ('the ' + type + 's array in data/')) + ', then create a pull request.' + (site ? ' (Site: ' + site + ')' : '');
+    contributionDesc.textContent = 'Copy the JSON or click Submit — a bot will place it in the right file and open a PR for you.';
     contributionJSON.textContent = jsonSnippet;
     contributionModal.style.display = 'flex';
-
-    const githubUrl = 'https://github.com/' + GITHUB_REPO + '/edit/' + GITHUB_BRANCH + '/' + (filePath || 'mapData.js');
 
     btnCopyContribution.textContent = '📋 Copy JSON';
     btnCopyContribution.onclick = function(){
@@ -279,8 +277,17 @@
       }
     };
 
-    btnOpenGitHub.onclick = function(){
-      window.open(githubUrl, '_blank');
+    btnSubmitContribution.onclick = function(){
+      const title = 'Add ' + type + ': ' + (name || 'Unnamed') + (site ? ' (' + site + ')' : '');
+      const body = '## Map Contribution\n\n' +
+        '**Type:** ' + type + '\n' +
+        '**Site:** ' + (site || 'college') + '\n' +
+        (type === 'building' ? '**Category:** ' + (jsonSnippet.match(/"category":\s*"([^"]+)"/) || [,'other'])[1] + '\n' : '') +
+        '**File:** `' + (filePath || 'data/') + '`\n\n' +
+        '```json\n' + jsonSnippet + '\n```';
+      const url = 'https://github.com/' + GITHUB_REPO + '/issues/new?title=' +
+        encodeURIComponent(title) + '&body=' + encodeURIComponent(body);
+      window.open(url, '_blank');
     };
 
     btnCloseContribution.onclick = function(){
@@ -336,15 +343,12 @@
   // everything else derives from them.
   const GITHUB_REPO = 'accelerate-muj/campus-mapper';
   const GITHUB_BRANCH = 'main';
-  const GITHUB_FILE_PATH = 'mapData.js'; // the file that actually holds the map data
 
   const btnContribute = document.getElementById('btnContribute');
   const contributeMenu = document.getElementById('contributeMenu');
-  const contribEditLink = document.getElementById('contribEditLink');
   const contribIssueLink = document.getElementById('contribIssueLink');
   const contribRepoLink = document.getElementById('contribRepoLink');
 
-  contribEditLink.href = 'https://github.com/' + GITHUB_REPO + '/edit/' + GITHUB_BRANCH + '/' + GITHUB_FILE_PATH;
   contribIssueLink.href = 'https://github.com/' + GITHUB_REPO + '/issues/new?labels=map-data&body=' +
     encodeURIComponent('**Site:** College / Hostel (delete one)\n**Building or landmark:** \n**What\'s wrong / missing:** \n');
   contribRepoLink.href = 'https://github.com/' + GITHUB_REPO;
