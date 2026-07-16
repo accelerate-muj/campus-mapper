@@ -12,7 +12,7 @@ permissions:
 jobs:
   process-contribution:
     runs-on: ubuntu-latest
-    if: contains(github.event.issue.body, '## Map Contribution')
+    if: ${{ contains(github.event.issue.body, '## Map Contribution') }}
     steps:
       - uses: actions/checkout@v4
 
