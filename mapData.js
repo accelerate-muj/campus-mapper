@@ -1,8 +1,8 @@
 // Auto-generated from data/ — do not edit directly
 window.BAKED_DATA = {
   "college": {
-    "lat": 26.84354891011086,
-    "lng": 75.56524772360338,
+    "lat": 26.843510785978108,
+    "lng": 75.56525222995012,
     "zoom": 17,
     "boundary": null
   },
@@ -1065,6 +1065,16 @@ window.BAKED_DATA = {
       "resolved": true,
       "entry": null,
       "category": "sports",
+      "floor": null
+    },
+    {
+      "id": "lm_1784222752608a6d710d1157a58",
+      "name": "Nescafe",
+      "lat": 26.842633930924755,
+      "lng": 75.56535587592525,
+      "resolved": false,
+      "entry": null,
+      "category": "dining",
       "floor": null
     }
   ],
