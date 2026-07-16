@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <name>Manipal University Jaipur - Combined Paths</name>
+  <Folder>
+    <name>Paths</name>
+    <Placemark>
+  <name>MUJ Paths - Hostel</name>
+  <Style><LineStyle><color>ff0000ff</color><width>3.5</width></LineStyle></Style>
+  <MultiGeometry>
+    <LineString><coordinates>75.56319967,26.84028962,0 75.56272564,26.84017165,0</coordinates></LineString>
+    <LineString><coordinates>75.56146459,26.84061015,0 75.56141581,26.84071984,0</coordinates></LineString>
+    <LineString><coordinates>75.56225052,26.83999377,0 75.56183033,26.83986770,0</coordinates></LineString>
+    <LineString><coordinates>75.56255379,26.84183233,0 75.56240787,26.84182031,0</coordinates></LineString>
+    <LineString><coordinates>75.56285212,26.84265468,0 75.56264293,26.84303533,0</coordinates></LineString>
+    <LineString><coordinates>75.56245018,26.84172032,0 75.56221786,26.84228748,0</coordinates></LineString>
+    <LineString><coordinates>75.56183294,26.84085399,0 75.56174023,26.84082797,0</coordinates></LineString>
+    <LineString><coordinates>75.56221786,26.84228748,0 75.56217840,26.84236925,0</coordinates></LineString>
+    <LineString><coordinates>75.56335429,26.84120918,0 75.56345612,26.84096932,0</coordinates></LineString>
+    <LineString><coordinates>75.56165949,26.84098548,0 75.56140282,26.84157735,0</coordinates></LineString>
+    <LineString><coordinates>75.56206989,26.84203678,0 75.56218755,26.84164538,0</coordinates></LineString>
+    <LineString><coordinates>75.56088955,26.84141033,0 75.56116272,26.84072755,0</coordinates></LineString>
+    <LineString><coordinates>75.56264293,26.84303533,0 75.56210739,26.84286926,0</coordinates></LineString>
+    <LineString><coordinates>75.56345612,26.84096932,0 75.56334681,26.84092155,0</coordinates></LineString>
+    <LineString><coordinates>75.56116272,26.84072755,0 75.56141581,26.84071984,0</coordinates></LineString>
+    <LineString><coordinates>75.56252710,26.84200093,0 75.56254964,26.84218812,0</coordinates></LineString>
+    <LineString><coordinates>75.56217840,26.84236925,0 75.56195612,26.84228513,0</coordinates></LineString>
+    <LineString><coordinates>75.56186759,26.84190563,0 75.56206989,26.84203678,0</coordinates></LineString>
+    <LineString><coordinates>75.56198293,26.84091068,0 75.56141581,26.84071984,0</coordinates></LineString>
+    <LineString><coordinates>75.56318293,26.84199144,0 75.56323510,26.84187965,0</coordinates></LineString>
+    <LineString><coordinates>75.56305017,26.84150090,0 75.56317118,26.84154165,0</coordinates></LineString>
+    <LineString><coordinates>75.56197410,26.84282457,0 75.56212029,26.84254250,0</coordinates></LineString>
+    <LineString><coordinates>75.56334681,26.84092155,0 75.56341171,26.84078851,0</coordinates></LineString>
+    <LineString><coordinates>75.56311318,26.84130483,0 75.56325246,26.84135477,0</coordinates></LineString>
+    <LineString><coordinates>75.56293032,26.84177820,0 75.56305017,26.84150090,0</coordinates></LineString>
+    <LineString><coordinates>75.56145359,26.84218510,0 75.56134079,26.84229227,0</coordinates></LineString>
+    <LineString><coordinates>75.56264063,26.84033760,0 75.56272564,26.84017165,0</coordinates></LineString>
+    <LineString><coordinates>75.56217840,26.84236925,0 75.56250645,26.84245881,0</coordinates></LineString>
+    <LineString><coordinates>75.56183294,26.84085399,0 75.56189081,26.84073899,0</coordinates></LineString>
+    <LineString><coordinates>75.56363465,26.84086158,0 75.56356495,26.84099989,0</coordinates></LineString>
+    <LineString><coordinates>75.56252710,26.84200093,0 75.56286822,26.84210881,0</coordinates></LineString>
+    <LineString><coordinates>75.56064206,26.84203449,0 75.56134079,26.84229227,0</coordinates></LineString>
+    <LineString><coordinates>75.56195612,26.84228513,0 75.56145359,26.84218510,0</coordinates></LineString>
+    <LineString><coordinates>75.56064206,26.84203449,0 75.56088955,26.84141033,0</coordinates></LineString>
+    <LineString><coordinates>75.56227216,26.84145305,0 75.56218755,26.84164538,0</coordinates></LineString>
+    <LineString><coordinates>75.56286822,26.84210881,0 75.56297408,26.84193875,0</coordinates></LineString>
+    <LineString><coordinates>75.56254964,26.84218812,0 75.56300088,26.84232590,0</coordinates></LineString>
+    <LineString><coordinates>75.56343243,26.84142265,0 75.56352261,26.84127322,0</coordinates></LineString>
+    <LineString><coordinates>75.56234713,26.84102580,0 75.56240453,26.84090811,0</coordinates></LineString>
+    <LineString><coordinates>75.56117049,26.84149480,0 75.56088720,26.84213058,0</coordinates></LineString>
+    <LineString><coordinates>75.56343243,26.84142265,0 75.56318293,26.84199144,0</coordinates></LineString>
+    <LineString><coordinates>75.56352261,26.84127322,0 75.56146459,26.84061015,0</coordinates></LineString>
+    <LineString><coordinates>75.56255379,26.84183233,0 75.56252710,26.84200093,0</coordinates></LineString>
+    <LineString><coordinates>75.56283845,26.84104094,0 75.56276969,26.84118205,0</coordinates></LineString>
+    <LineString><coordinates>75.56174023,26.84082797,0 75.56165949,26.84098548,0</coordinates></LineString>
+    <LineString><coordinates>75.56187156,26.84119798,0 75.56209493,26.84127652,0</coordinates></LineString>
+    <LineString><coordinates>75.56209493,26.84127652,0 75.56204534,26.84138426,0</coordinates></LineString>
+    <LineString><coordinates>75.56305017,26.84150090,0 75.56335174,26.84161945,0</coordinates></LineString>
+    <LineString><coordinates>75.56198293,26.84091068,0 75.56145359,26.84218510,0</coordinates></LineString>
+    <LineString><coordinates>75.56210739,26.84286926,0 75.56148309,26.84267100,0</coordinates></LineString>
+    <LineString><coordinates>75.56165949,26.84098548,0 75.56191709,26.84106043,0</coordinates></LineString>
+    <LineString><coordinates>75.56121058,26.84129992,0 75.56112519,26.84133296,0</coordinates></LineString>
+    <LineString><coordinates>75.56264063,26.84033760,0 75.56240453,26.84090811,0</coordinates></LineString>
+    <LineString><coordinates>75.56189081,26.84073899,0 75.56225052,26.83999377,0</coordinates></LineString>
+    <LineString><coordinates>75.56195864,26.83962266,0 75.56277434,26.83991296,0</coordinates></LineString>
+    <LineString><coordinates>75.56070118,26.84277278,0 75.56191386,26.84322508,0</coordinates></LineString>
+    <LineString><coordinates>75.56141581,26.84071984,0 75.56121058,26.84129992,0</coordinates></LineString>
+    <LineString><coordinates>75.56311318,26.84130483,0 75.56318757,26.84116659,0</coordinates></LineString>
+    <LineString><coordinates>75.56317118,26.84154165,0 75.56325246,26.84135477,0</coordinates></LineString>
+    <LineString><coordinates>75.56166999,26.84378459,0 75.56191386,26.84322508,0</coordinates></LineString>
+    <LineString><coordinates>75.56225052,26.83999377,0 75.56249890,26.84006570,0</coordinates></LineString>
+    <LineString><coordinates>75.56323510,26.84187965,0 75.56293032,26.84177820,0</coordinates></LineString>
+    <LineString><coordinates>75.56259336,26.84256064,0 75.56250645,26.84245881,0</coordinates></LineString>
+    <LineString><coordinates>75.56206989,26.84203678,0 75.56195612,26.84228513,0</coordinates></LineString>
+    <LineString><coordinates>75.56174221,26.84150079,0 75.56218755,26.84164538,0</coordinates></LineString>
+    <LineString><coordinates>75.56285212,26.84265468,0 75.56300088,26.84232590,0</coordinates></LineString>
+    <LineString><coordinates>75.56210739,26.84286926,0 75.56197410,26.84282457,0</coordinates></LineString>
+    <LineString><coordinates>75.56319967,26.84028962,0 75.56393905,26.84056851,0</coordinates></LineString>
+    <LineString><coordinates>75.56117049,26.84149480,0 75.56112519,26.84133296,0</coordinates></LineString>
+    <LineString><coordinates>75.56154869,26.84049622,0 75.56170589,26.84010955,0</coordinates></LineString>
+    <LineString><coordinates>75.56283845,26.84104094,0 75.56319967,26.84028962,0</coordinates></LineString>
+    <LineString><coordinates>75.56318293,26.84199144,0 75.56300088,26.84232590,0</coordinates></LineString>
+    <LineString><coordinates>75.56318293,26.84199144,0 75.56255379,26.84183233,0</coordinates></LineString>
+    <LineString><coordinates>75.56254306,26.84268882,0 75.56134079,26.84229227,0</coordinates></LineString>
+    <LineString><coordinates>75.56146459,26.84061015,0 75.56154869,26.84049622,0</coordinates></LineString>
+    <LineString><coordinates>75.56088955,26.84141033,0 75.56166856,26.84165727,0</coordinates></LineString>
+    <LineString><coordinates>75.56204534,26.84138426,0 75.56227216,26.84145305,0</coordinates></LineString>
+    <LineString><coordinates>75.56170589,26.84010955,0 75.56195864,26.83962266,0</coordinates></LineString>
+    <LineString><coordinates>75.56109272,26.84292783,0 75.56134079,26.84229227,0</coordinates></LineString>
+    <LineString><coordinates>75.56249890,26.84006570,0 75.56239132,26.84026344,0</coordinates></LineString>
+    <LineString><coordinates>75.56210739,26.84286926,0 75.56191386,26.84322508,0</coordinates></LineString>
+    <LineString><coordinates>75.56045175,26.84335133,0 75.56070118,26.84277278,0</coordinates></LineString>
+    <LineString><coordinates>75.56112519,26.84133296,0 75.56095118,26.84127264,0</coordinates></LineString>
+    <LineString><coordinates>75.56345612,26.84096932,0 75.56356495,26.84099989,0</coordinates></LineString>
+    <LineString><coordinates>75.56161555,26.84183137,0 75.56186759,26.84190563,0</coordinates></LineString>
+    <LineString><coordinates>75.56254306,26.84268882,0 75.56259336,26.84256064,0</coordinates></LineString>
+    <LineString><coordinates>75.56318757,26.84116659,0 75.56335429,26.84120918,0</coordinates></LineString>
+    <LineString><coordinates>75.56227216,26.84145305,0 75.56241189,26.84113885,0</coordinates></LineString>
+    <LineString><coordinates>75.56195612,26.84228513,0 75.56187032,26.84248133,0</coordinates></LineString>
+    <LineString><coordinates>75.56218755,26.84164538,0 75.56245018,26.84172032,0</coordinates></LineString>
+    <LineString><coordinates>75.56239132,26.84026344,0 75.56264063,26.84033760,0</coordinates></LineString>
+    <LineString><coordinates>75.56276969,26.84118205,0 75.56255379,26.84183233,0</coordinates></LineString>
+    <LineString><coordinates>75.56198293,26.84091068,0 75.56343243,26.84142265,0</coordinates></LineString>
+    <LineString><coordinates>75.56133158,26.84300883,0 75.56148309,26.84267100,0</coordinates></LineString>
+    <LineString><coordinates>75.56341171,26.84078851,0 75.56363465,26.84086158,0</coordinates></LineString>
+    <LineString><coordinates>75.56352261,26.84127322,0 75.56393905,26.84056851,0</coordinates></LineString>
+    <LineString><coordinates>75.56259336,26.84256064,0 75.56285212,26.84265468,0</coordinates></LineString>
+  </MultiGeometry>
+</Placemark>
+    <Placemark>
+  <name>MUJ Paths - College</name>
+  <Style><LineStyle><color>ff00ff00</color><width>3.5</width></LineStyle></Style>
+  <MultiGeometry>
+    <LineString><coordinates>75.56484804,26.84173601,0 75.56492371,26.84129898,0</coordinates></LineString>
+    <LineString><coordinates>75.56578968,26.84265275,0 75.56595551,26.84272850,0</coordinates></LineString>
+    <LineString><coordinates>75.56377551,26.84376552,0 75.56384428,26.84327650,0</coordinates></LineString>
+    <LineString><coordinates>75.56515538,26.84409106,0 75.56510183,26.84425924,0</coordinates></LineString>
+    <LineString><coordinates>75.56495140,26.84581406,0 75.56499909,26.84550518,0</coordinates></LineString>
+    <LineString><coordinates>75.56651254,26.84399552,0 75.56657830,26.84383411,0</coordinates></LineString>
+    <LineString><coordinates>75.56357585,26.84289603,0 75.56537630,26.84359440,0</coordinates></LineString>
+    <LineString><coordinates>75.56477644,26.84498181,0 75.56606525,26.84545755,0</coordinates></LineString>
+    <LineString><coordinates>75.56499909,26.84550518,0 75.56492890,26.84525324,0</coordinates></LineString>
+    <LineString><coordinates>75.56692565,26.84303174,0 75.56578968,26.84265275,0</coordinates></LineString>
+    <LineString><coordinates>75.56448035,26.84404955,0 75.56510183,26.84425924,0</coordinates></LineString>
+    <LineString><coordinates>75.56478644,26.84187458,0 75.56468458,26.84214431,0</coordinates></LineString>
+    <LineString><coordinates>75.56384428,26.84327650,0 75.56360219,26.84320137,0</coordinates></LineString>
+    <LineString><coordinates>75.56476107,26.84337569,0 75.56482422,26.84325663,0</coordinates></LineString>
+    <LineString><coordinates>75.56419461,26.84477952,0 75.56477644,26.84498181,0</coordinates></LineString>
+    <LineString><coordinates>75.56476107,26.84337569,0 75.56534280,26.84206894,0</coordinates></LineString>
+    <LineString><coordinates>75.56576045,26.84109175,0 75.56635647,26.84131080,0</coordinates></LineString>
+    <LineString><coordinates>75.56459953,26.84617435,0 75.56481340,26.84603379,0</coordinates></LineString>
+    <LineString><coordinates>75.56537630,26.84359440,0 75.56651254,26.84399552,0</coordinates></LineString>
+    <LineString><coordinates>75.56635647,26.84131080,0 75.56624690,26.84155304,0</coordinates></LineString>
+    <LineString><coordinates>75.56477644,26.84498181,0 75.56464259,26.84493756,0</coordinates></LineString>
+    <LineString><coordinates>75.56352597,26.84433356,0 75.56426805,26.84460473,0</coordinates></LineString>
+    <LineString><coordinates>75.56421655,26.84152956,0 75.56598042,26.84209371,0</coordinates></LineString>
+    <LineString><coordinates>75.56624690,26.84155304,0 75.56683537,26.84196197,0</coordinates></LineString>
+    <LineString><coordinates>75.56566086,26.84294492,0 75.56563902,26.84303508,0</coordinates></LineString>
+    <LineString><coordinates>75.56492371,26.84129898,0 75.56564499,26.84135476,0</coordinates></LineString>
+    <LineString><coordinates>75.56631688,26.84325811,0 75.56621212,26.84354985,0</coordinates></LineString>
+    <LineString><coordinates>75.56564499,26.84135476,0 75.56576045,26.84109175,0</coordinates></LineString>
+    <LineString><coordinates>75.56598042,26.84209371,0 75.56648288,26.84228107,0</coordinates></LineString>
+    <LineString><coordinates>75.56648288,26.84228107,0 75.56639365,26.84247296,0</coordinates></LineString>
+    <LineString><coordinates>75.56563902,26.84303508,0 75.56631688,26.84325811,0</coordinates></LineString>
+    <LineString><coordinates>75.56545771,26.84341747,0 75.56657830,26.84383411,0</coordinates></LineString>
+    <LineString><coordinates>75.56621212,26.84354985,0 75.56614925,26.84368787,0</coordinates></LineString>
+    <LineString><coordinates>75.56558195,26.84215313,0 75.56567429,26.84198924,0</coordinates></LineString>
+    <LineString><coordinates>75.56492890,26.84525324,0 75.56477644,26.84498181,0</coordinates></LineString>
+    <LineString><coordinates>75.56378163,26.84490430,0 75.56355437,26.84508148,0</coordinates></LineString>
+    <LineString><coordinates>75.56419461,26.84477952,0 75.56426805,26.84460473,0</coordinates></LineString>
+    <LineString><coordinates>75.56502098,26.84281455,0 75.56563902,26.84303508,0</coordinates></LineString>
+    <LineString><coordinates>75.56631688,26.84325811,0 75.56648468,26.84287355,0</coordinates></LineString>
+    <LineString><coordinates>75.56355437,26.84508148,0 75.56337099,26.84536206,0</coordinates></LineString>
+    <LineString><coordinates>75.56594151,26.84229666,0 75.56639365,26.84247296,0</coordinates></LineString>
+    <LineString><coordinates>75.56651254,26.84399552,0 75.56692565,26.84303174,0</coordinates></LineString>
+    <LineString><coordinates>75.56563186,26.84347156,0 75.56595551,26.84272850,0</coordinates></LineString>
+    <LineString><coordinates>75.56506879,26.84226669,0 75.56434715,26.84205061,0</coordinates></LineString>
+    <LineString><coordinates>75.56476107,26.84337569,0 75.56419461,26.84477952,0</coordinates></LineString>
+    <LineString><coordinates>75.56413572,26.84248098,0 75.56390461,26.84293775,0</coordinates></LineString>
+    <LineString><coordinates>75.56515538,26.84409106,0 75.56477644,26.84498181,0</coordinates></LineString>
+    <LineString><coordinates>75.56415063,26.84166087,0 75.56515537,26.84202260,0</coordinates></LineString>
+    <LineString><coordinates>75.56419461,26.84477952,0 75.56378163,26.84490430,0</coordinates></LineString>
+    <LineString><coordinates>75.56390461,26.84293775,0 75.56482422,26.84325663,0</coordinates></LineString>
+    <LineString><coordinates>75.56534280,26.84206894,0 75.56558195,26.84215313,0</coordinates></LineString>
+    <LineString><coordinates>75.56515537,26.84202260,0 75.56594151,26.84229666,0</coordinates></LineString>
+    <LineString><coordinates>75.56426794,26.84305821,0 75.56448937,26.84260181,0</coordinates></LineString>
+    <LineString><coordinates>75.56594151,26.84229666,0 75.56566086,26.84294492,0</coordinates></LineString>
+    <LineString><coordinates>75.56375136,26.84617396,0 75.56403959,26.84627007,0</coordinates></LineString>
+    <LineString><coordinates>75.56413572,26.84248098,0 75.56434715,26.84205061,0</coordinates></LineString>
+    <LineString><coordinates>75.56403959,26.84627007,0 75.56431831,26.84626102,0</coordinates></LineString>
+    <LineString><coordinates>75.56463693,26.84318373,0 75.56506879,26.84226669,0</coordinates></LineString>
+    <LineString><coordinates>75.56337099,26.84536206,0 75.56337630,26.84565445,0</coordinates></LineString>
+    <LineString><coordinates>75.56566086,26.84294492,0 75.56515538,26.84409106,0</coordinates></LineString>
+    <LineString><coordinates>75.56462036,26.84374105,0 75.56382554,26.84344919,0</coordinates></LineString>
+    <LineString><coordinates>75.56484804,26.84173601,0 75.56478644,26.84187458,0</coordinates></LineString>
+    <LineString><coordinates>75.56406903,26.84182789,0 75.56415063,26.84166087,0</coordinates></LineString>
+    <LineString><coordinates>75.56360219,26.84320137,0 75.56357585,26.84289603,0</coordinates></LineString>
+    <LineString><coordinates>75.56384428,26.84327650,0 75.56528598,26.84377244,0</coordinates></LineString>
+    <LineString><coordinates>75.56434715,26.84205061,0 75.56468458,26.84214431,0</coordinates></LineString>
+    <LineString><coordinates>75.56431831,26.84626102,0 75.56459953,26.84617435,0</coordinates></LineString>
+    <LineString><coordinates>75.56344802,26.84451587,0 75.56477644,26.84498181,0</coordinates></LineString>
+    <LineString><coordinates>75.56337630,26.84565445,0 75.56348275,26.84594351,0</coordinates></LineString>
+    <LineString><coordinates>75.56400999,26.84195071,0 75.56357585,26.84289603,0</coordinates></LineString>
+    <LineString><coordinates>75.56502098,26.84281455,0 75.56382759,26.84233723,0</coordinates></LineString>
+    <LineString><coordinates>75.56481340,26.84603379,0 75.56495140,26.84581406,0</coordinates></LineString>
+    <LineString><coordinates>75.56348275,26.84594351,0 75.56375136,26.84617396,0</coordinates></LineString>
+    <LineString><coordinates>75.56384428,26.84327650,0 75.56382554,26.84344919,0</coordinates></LineString>
+    <LineString><coordinates>75.56468458,26.84214431,0 75.56448937,26.84260181,0</coordinates></LineString>
+    <LineString><coordinates>75.56344802,26.84451587,0 75.56377551,26.84376552,0</coordinates></LineString>
+    <LineString><coordinates>75.56415063,26.84166087,0 75.56421655,26.84152956,0</coordinates></LineString>
+  </MultiGeometry>
+</Placemark>
+  </Folder>
+</Document>
+</kml>

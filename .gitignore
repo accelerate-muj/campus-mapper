@@ -1,0 +1,13 @@
+# Ignore local guide, dashboards, and config files
+Dashboard/
+git-guide/
+.claude/
+campus-map-updated (3).html
+DISCORD_GITHUB_INTEGRATION.md
+ORG-DECISIONS.md
+STRUCTURE_EXPLAINED.md
+
+# Ignore OS files
+Thumbs.db
+.DS_Store
+desktop.ini
