@@ -1,0 +1,11 @@
+name: Test workflow trigger
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Workflow triggered successfully"
