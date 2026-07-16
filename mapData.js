@@ -1,4 +1,4 @@
-{
+window.BAKED_DATA = {
   "college": {
     "boundary": [
       [
@@ -4916,4 +4916,4 @@
     "bearing": 22,
     "locked": true
   }
-}
+};

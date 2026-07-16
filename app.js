@@ -1,4 +1,4 @@
-(async function(){
+(function(){
   "use strict";
 
   // ---------- Map setup ----------
@@ -30,13 +30,13 @@
   map.getPane('maskPane').style.zIndex = 350;
   map.getPane('maskPane').style.pointerEvents = 'none';
 
-  // ---------- Load campus data ----------
-  // campus-data.json is the committed, shared source of truth — all
-  // buildings, landmarks, paths, boundaries, and compass settings live
-  // there as plain JSON. This fetches it on page load so app.js doesn't
-  // need a separate <script> block to embed the data inline.
-  const response = await fetch('campus-data.json');
-  const BAKED_DATA = await response.json();
+  // ---------- Persistent state ----------
+  // BAKED_DATA is the committed, shared source of truth. It lives as plain
+  // JSON in the <script id="mapData"> block right above this script — open
+  // the file in a text editor and you'll see it as readable JSON, not
+  // buried in code. To publish changes: click "Copy JSON", paste it over
+  // the contents of that block, then commit/PR the file.
+  const BAKED_DATA = window.BAKED_DATA;
   // Snapshot of exactly what's baked into the file right now. Used to
   // detect "the file on disk changed since I last saved a local draft" —
   // see loadData() below.
@@ -356,7 +356,7 @@
   // everything else derives from them.
   const GITHUB_REPO = 'accelerate-muj/campus-mapper';
   const GITHUB_BRANCH = 'main';
-  const GITHUB_FILE_PATH = 'index.html'; // path to *this* file inside the repo
+  const GITHUB_FILE_PATH = 'mapData.js'; // the file that actually holds the map data
 
   const btnContribute = document.getElementById('btnContribute');
   const contributeMenu = document.getElementById('contributeMenu');
@@ -369,12 +369,20 @@
     encodeURIComponent('**Site:** College / Hostel (delete one)\n**Building or landmark:** \n**What\'s wrong / missing:** \n');
   contribRepoLink.href = 'https://github.com/' + GITHUB_REPO;
 
+  function closeContributeMenu(){ contributeMenu.classList.remove('show'); }
+
   btnContribute.addEventListener('click', function(e){
     e.stopPropagation();
     contributeMenu.classList.toggle('show');
   });
   document.addEventListener('click', function(e){
-    if(!e.target.closest('.contribute-widget')) contributeMenu.classList.remove('show');
+    if(!e.target.closest('.contribute-widget')) closeContributeMenu();
+  });
+  // Any menu item that isn't a plain outbound link (those three GitHub
+  // <a> tags) should close the dropdown once clicked, since clicking it
+  // starts an editing mode on the map rather than navigating away.
+  contributeMenu.querySelectorAll('button.menu-item').forEach(function(btn){
+    btn.addEventListener('click', closeContributeMenu);
   });
 
   // ---------- Status helper ----------
@@ -387,7 +395,6 @@
   // ---------- UI refs ----------
   const tabCollege = document.getElementById('tabCollege');
   const tabHostel = document.getElementById('tabHostel');
-  const btnDrawBuilding = document.getElementById('btnDrawBuilding');
   const buildingActions = document.getElementById('buildingActions');
   const btnBuildingUndo = document.getElementById('btnBuildingUndo');
   const btnBuildingFinish = document.getElementById('btnBuildingFinish');
@@ -395,6 +402,24 @@
   const buildingListEl = document.getElementById('buildingList');
   const buildingCountEl = document.getElementById('buildingCount');
   const emptyNote = document.getElementById('emptyNote');
+
+  // Contribute-menu editing entry points — these replace the old always-
+  // visible Setup tab. The side panel is now a pure view (Directions +
+  // Buildings); every editing action is launched from here instead.
+  const menuAddBuilding = document.getElementById('menuAddBuilding');
+  const menuAddLandmark = document.getElementById('menuAddLandmark');
+  const menuEditEntry = document.getElementById('menuEditEntry');
+  const menuEditPaths = document.getElementById('menuEditPaths');
+  const menuTraceLandmarks = document.getElementById('menuTraceLandmarks');
+  const menuLandmarkBadge = document.getElementById('menuLandmarkBadge');
+  const landmarksBox = document.getElementById('landmarksBox');
+  const btnCloseLandmarks = document.getElementById('btnCloseLandmarks');
+  const pathActions = document.getElementById('pathActions');
+  const btnPathUndo = document.getElementById('btnPathUndo');
+  const btnPathFinish = document.getElementById('btnPathFinish');
+  const btnPathCancel = document.getElementById('btnPathCancel');
+  const landmarkPlaceActions = document.getElementById('landmarkPlaceActions');
+  const btnLandmarkPlaceCancel = document.getElementById('btnLandmarkPlaceCancel');
 
   // ================= BOUNDARY (finalized — drawing tools removed) =================
   // Both sites' boundaries are permanently set (see the "finalized" flag in
@@ -564,9 +589,14 @@
     pathsLayer.clearLayers();
     siteData.paths.forEach(function(p){
       if(p.site !== currentSite) return;
-      L.polyline(p.points, {
+      const line = L.polyline(p.points, {
         color: '#93a1ab', weight: 2, opacity: 0.55, dashArray: '1,6', lineCap: 'round'
       }).bindTooltip(p.name || 'Path', { sticky: true }).addTo(pathsLayer);
+      line.on('click', function(ev){
+        if(!drawingPath) return; // only clickable-to-delete while Edit Paths mode is active
+        L.DomEvent.stopPropagation(ev);
+        deletePath(p.id);
+      });
     });
   }
 
@@ -591,7 +621,6 @@
     clearTempVertexLayers();
     freezeRotationGesturesForDrawing();
     map.getContainer().classList.add('drawing-cursor');
-    btnDrawBuilding.classList.add('on');
     buildingActions.style.display = 'flex';
     setStatus('Click to place building corner points. Click the first point again (or hit Finish) to close it.', true);
   }
@@ -622,7 +651,6 @@
     pendingLandmarkId = null;
     clearTempVertexLayers();
     map.getContainer().classList.remove('drawing-cursor');
-    btnDrawBuilding.classList.remove('on');
     buildingActions.style.display = 'none';
     unfreezeRotationGesturesAfterDrawing();
   }
@@ -866,8 +894,18 @@
   }
 
   map.on('click', function(e){
+    if(placingNewLandmark){ handleNewLandmarkClick(e.latlng); return; }
     if(placingEntryFor){ placeEntryAt(e.latlng); return; }
     if(drawingBoundary) return; // boundary uses drag, not click
+    if(drawingPath){
+      currentPathPoints.push(e.latlng);
+      const marker = L.circleMarker(e.latlng, {
+        radius: VERTEX_RADIUS, color: '#e0c145', fillColor: '#e0c145', fillOpacity: 1, weight: 2
+      }).addTo(map);
+      pathVertexMarkers.push(marker);
+      updatePathPreview();
+      return;
+    }
     if(!drawingBuilding) return;
 
     if(isCloseToFirstPoint(e.latlng)){
@@ -996,24 +1034,210 @@
     if(e.key === 'Enter'){ e.preventDefault(); modalSaveBtn.click(); }
   });
 
-  btnDrawBuilding.addEventListener('click', function(){
-    if(drawingBuilding){ cancelBuildingDraw(); return; }
-    startBuildingDraw();
-  });
   btnBuildingCancel.addEventListener('click', cancelBuildingDraw);
   btnBuildingFinish.addEventListener('click', finishBuilding);
   btnBuildingUndo.addEventListener('click', undoLastPoint);
   document.getElementById('btnCopyJSON').addEventListener('click', copyJSON);
 
+  // ================= EDIT MODE SWITCHING (Contribute menu) =================
+  // Only one editing mode can be active at a time. Every mode-start function
+  // calls this first so switching straight from, say, "Add Building" to
+  // "Edit Paths" via the menu doesn't leave the old mode's map-click
+  // listener or floating toolbar dangling.
+  function cancelAllEditModes(){
+    if(drawingBuilding) cancelBuildingDraw();
+    if(placingEntryFor) cancelEntryPlacement();
+    if(selectingEntryTarget) cancelSelectEntryTarget();
+    if(drawingPath) cancelPathEdit();
+    if(placingNewLandmark) cancelAddLandmark();
+  }
+
+  // ---------------- Add Landmark ----------------
+  // A landmark is just a named pin waiting to be traced into a building
+  // (see the LANDMARKS section below) — reusing that model means a
+  // hand-placed landmark shows up in "Trace Landmarks" exactly like one
+  // imported from the KML, with no separate code path needed.
+  let placingNewLandmark = false;
+
+  function startAddLandmark(){
+    cancelAllEditModes();
+    placingNewLandmark = true;
+    map.getContainer().classList.add('drawing-cursor');
+    landmarkPlaceActions.style.display = 'flex';
+    setStatus('Click the map to drop a new landmark pin.', true);
+  }
+
+  function cancelAddLandmark(){
+    placingNewLandmark = false;
+    landmarkPlaceActions.style.display = 'none';
+    map.getContainer().classList.remove('drawing-cursor');
+  }
+
+  function handleNewLandmarkClick(latlng){
+    const name = (window.prompt('Name this landmark (e.g. "Block C2", "Volleyball Court"):', '') || '').trim();
+    cancelAddLandmark();
+    if(!name){ setStatus('Landmark discarded — no name given.'); return; }
+    const lm = {
+      id: 'lm_' + Date.now() + Math.random().toString(16).slice(2),
+      name: name, lat: latlng.lat, lng: latlng.lng,
+      resolved: false, entry: null, floor: null
+    };
+    siteData.landmarks.push(lm);
+    saveData();
+    renderLandmarks();
+    renderLandmarkList();
+    setStatus('Landmark "' + name + '" added — trace it into a building anytime from Contribute → Trace Landmarks.');
+  }
+
+  btnLandmarkPlaceCancel.addEventListener('click', function(){
+    cancelAddLandmark();
+    setStatus('Landmark placement cancelled.');
+  });
+
+  // ---------------- Add / Edit Entry Point (target picker) ----------------
+  // The old per-item 📍 buttons lived in an always-visible Setup list.
+  // Since the panel is view-only now, this mode instead waits for a click
+  // on a building's polygon on the map (or a landmark in the Trace
+  // Landmarks list, which still has its own 📍 button) and starts the
+  // existing entry-placement flow for whatever was clicked.
+  let selectingEntryTarget = false;
+
+  function startSelectEntryTarget(){
+    cancelAllEditModes();
+    selectingEntryTarget = true;
+    map.getContainer().classList.add('drawing-cursor');
+    setStatus('Click a building on the map to set or edit its entrance. (Landmarks not yet traced into a building can get one from Contribute → Trace Landmarks.)', true);
+  }
+
+  function cancelSelectEntryTarget(){
+    selectingEntryTarget = false;
+    map.getContainer().classList.remove('drawing-cursor');
+  }
+
+  // ---------------- Edit Paths ----------------
+  // Trace a new walking-path segment the same way a building is traced
+  // (click to place waypoints, Finish to save) — except it stays an open
+  // line, not a closed polygon, and only needs 2+ points. While this mode
+  // is active, clicking an EXISTING path segment deletes it instead
+  // (see renderPaths), so "edit" covers both adding and removing paths.
+  let drawingPath = false;
+  let currentPathPoints = [];
+  let pathVertexMarkers = [];
+  let pathPreviewLine = null;
+
+  function startPathEdit(){
+    cancelAllEditModes();
+    drawingPath = true;
+    currentPathPoints = [];
+    clearTempPathVertexLayers();
+    freezeRotationGesturesForDrawing();
+    map.getContainer().classList.add('drawing-cursor');
+    pathActions.style.display = 'flex';
+    setStatus('Click to trace a new path (2+ points), then Finish. Click an existing dashed path to delete it instead.', true);
+  }
+
+  function clearTempPathVertexLayers(){
+    pathVertexMarkers.forEach(m => map.removeLayer(m));
+    pathVertexMarkers = [];
+    if(pathPreviewLine){ map.removeLayer(pathPreviewLine); pathPreviewLine = null; }
+  }
+
+  function endPathEditUI(){
+    drawingPath = false;
+    currentPathPoints = [];
+    clearTempPathVertexLayers();
+    map.getContainer().classList.remove('drawing-cursor');
+    pathActions.style.display = 'none';
+    unfreezeRotationGesturesAfterDrawing();
+  }
+
+  function cancelPathEdit(){
+    endPathEditUI();
+    setStatus('Path editing closed.');
+  }
+
+  function updatePathPreview(){
+    if(pathPreviewLine){ map.removeLayer(pathPreviewLine); pathPreviewLine = null; }
+    if(currentPathPoints.length < 2) return;
+    pathPreviewLine = L.polyline(currentPathPoints, { color: '#e0c145', weight: 2, dashArray: '4,4' }).addTo(map);
+  }
+
+  function undoLastPathPoint(){
+    if(!drawingPath || currentPathPoints.length === 0) return;
+    currentPathPoints.pop();
+    const m = pathVertexMarkers.pop();
+    if(m) map.removeLayer(m);
+    updatePathPreview();
+    setStatus(currentPathPoints.length + ' point(s) placed for the new path.', true);
+  }
+
+  function finishPath(){
+    if(currentPathPoints.length < 2){
+      setStatus('Need at least 2 points to make a path segment. Add more, or Cancel.', true);
+      return;
+    }
+    const name = (window.prompt('Name this path segment (optional):', '') || '').trim();
+    const path = {
+      id: 'path_' + Date.now() + Math.random().toString(16).slice(2),
+      name: name || null,
+      site: currentSite,
+      points: currentPathPoints.map(p => [p.lat, p.lng])
+    };
+    siteData.paths.push(path);
+    saveData();
+    endPathEditUI();
+    renderPaths();
+    graphCache = {}; // the routing graph is built lazily from siteData.paths — drop the stale cache
+    populateDirectionSelects();
+    setStatus('Path segment saved. Trace another from Contribute → Edit Paths, or switch tools.');
+  }
+
+  function deletePath(pathId){
+    const p = siteData.paths.find(pp => pp.id === pathId);
+    if(!p) return;
+    if(!window.confirm('Delete ' + (p.name || 'this path segment') + '?')) return;
+    siteData.paths = siteData.paths.filter(pp => pp.id !== pathId);
+    saveData();
+    renderPaths();
+    graphCache = {};
+    populateDirectionSelects();
+    setStatus('Path segment deleted.');
+  }
+
+  btnPathCancel.addEventListener('click', cancelPathEdit);
+  btnPathFinish.addEventListener('click', finishPath);
+  btnPathUndo.addEventListener('click', undoLastPathPoint);
+
+  // ---------------- Contribute menu → mode wiring ----------------
+  menuAddBuilding.addEventListener('click', startBuildingDraw);
+  menuAddLandmark.addEventListener('click', startAddLandmark);
+  menuEditEntry.addEventListener('click', startSelectEntryTarget);
+  menuEditPaths.addEventListener('click', startPathEdit);
+  menuTraceLandmarks.addEventListener('click', function(){
+    cancelAllEditModes();
+    landmarksBox.style.display = 'block';
+    expandPanelOnMobile();
+    landmarksBox.scrollIntoView({ block: 'nearest' });
+  });
+  btnCloseLandmarks.addEventListener('click', function(){
+    landmarksBox.style.display = 'none';
+  });
+
   document.addEventListener('keydown', function(e){
     if(e.key === 'Escape'){
       if(nameCategoryModal.style.display === 'flex'){ modalCancelBtn.click(); return; }
+      if(placingNewLandmark){ cancelAddLandmark(); setStatus('Landmark placement cancelled.'); return; }
+      if(selectingEntryTarget){ cancelSelectEntryTarget(); setStatus('Entry point editing cancelled.'); return; }
       if(placingEntryFor) cancelEntryPlacement();
+      if(drawingPath) cancelPathEdit();
       if(drawingBuilding) cancelBuildingDraw();
       if(drawingBoundary) cancelBoundaryDraw();
     }
     if(e.key === 'Enter' && drawingBuilding){
       finishBuilding();
+    }
+    if(e.key === 'Enter' && drawingPath){
+      finishPath();
     }
   });
 
@@ -1054,6 +1278,7 @@
     const pending = siteData.landmarks.filter(l => !l.resolved);
     countEl.textContent = pending.length ? '(' + pending.length + ')' : '';
     emptyEl.style.display = pending.length ? 'none' : 'block';
+    menuLandmarkBadge.textContent = pending.length ? String(pending.length) : '';
 
     pending.forEach(function(lm){
       const li = document.createElement('li');
@@ -1178,7 +1403,14 @@
       }).addTo(buildingsLayer);
       const displayName = b.name || ('Building ' + (idx + 1));
       poly.bindTooltip(displayName + ' · ' + cat.label, { sticky: true });
-      poly.on('click', function(){ goToBuilding(b, poly); });
+      poly.on('click', function(){
+        if(selectingEntryTarget){
+          cancelSelectEntryTarget();
+          startEntryPlacement('building', b.id);
+          return;
+        }
+        goToBuilding(b, poly);
+      });
     });
 
     buildingCountEl.textContent = list.length ? '(' + list.length + ')' : '';
@@ -1804,37 +2036,16 @@
   tabCollege.addEventListener('click', function(){ switchSite('college'); });
   tabHostel.addEventListener('click', function(){ switchSite('hostel'); });
 
-  // ================= SIDE TABS (Setup / Navigate) =================
-  const sideTabSetup = document.getElementById('sideTabSetup');
-  const sideTabExplore = document.getElementById('sideTabExplore');
-  const tabSetupPane = document.getElementById('tabSetup');
-  const tabExplorePane = document.getElementById('tabExplore');
-
-  function setSideTab(tab){
-    const setupActive = tab === 'setup';
-    sideTabSetup.classList.toggle('active', setupActive);
-    sideTabExplore.classList.toggle('active', !setupActive);
-    tabSetupPane.classList.toggle('active', setupActive);
-    tabExplorePane.classList.toggle('active', !setupActive);
-  }
-  sideTabSetup.addEventListener('click', function(){ setSideTab('setup'); });
-  sideTabExplore.addEventListener('click', function(){ setSideTab('explore'); });
-
   // ================= INIT =================
+  // The panel is now always a pure view (Directions + Buildings); there's
+  // no more Setup/Navigate tab to default into. If there's tracing work
+  // outstanding, surface it as a badge on Contribute → Trace Landmarks
+  // instead of auto-opening anything.
   updateCompassUI();
   applyCompassLock();
   renderLandmarks();
   renderLandmarkList();
 
-  // Default to whichever tab matches where things stand: if setup work is
-  // still outstanding (an unfinalized boundary, an unlocked direction, or
-  // untraced landmarks) open on Setup; otherwise open straight into Navigate.
-  (function(){
-    const setupPending = !siteData.college.finalized || !siteData.hostel.finalized ||
-      !(siteData.compass && siteData.compass.locked) ||
-      siteData.landmarks.some(function(l){ return !l.resolved; });
-    setSideTab(setupPending ? 'setup' : 'explore');
-  })();
   if(!siteData.college.boundary && !siteData.hostel.boundary && siteData.landmarks.length){
     const avgLat = siteData.landmarks.reduce((s,l)=>s+l.lat,0) / siteData.landmarks.length;
     const avgLng = siteData.landmarks.reduce((s,l)=>s+l.lng,0) / siteData.landmarks.length;

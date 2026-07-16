@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Mapper — Verify</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Top bar -->
+  <div id="topbar">
+    <div class="topbar-left">
+      <i class="fas fa-shield-halved"></i>
+      <span>Verify Mode</span>
+    </div>
+    <div class="topbar-right">
+      <label class="toggle-label" title="Show existing campus data as reference">
+        <input type="checkbox" id="toggleExisting" checked>
+        <span>Existing Data</span>
+      </label>
+      <label class="toggle-label" title="Show submitted data overlay">
+        <input type="checkbox" id="toggleSubmitted" checked>
+        <span>Submitted Data</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Validation panel -->
+  <div id="validationPanel" class="panel hidden">
+    <div class="panel-header">
+      <i class="fas fa-clipboard-check"></i>
+      <span>Validation</span>
+      <button id="closeValidation" class="panel-close">&times;</button>
+    </div>
+    <div id="validationResults" class="panel-body"></div>
+  </div>
+
+  <!-- JSON import panel -->
+  <div id="importPanel">
+    <div class="panel-header">
+      <i class="fas fa-code"></i>
+      <span>JSON Import</span>
+      <div class="panel-actions">
+        <button id="loadFileBtn" class="btn btn-sm" title="Load JSON file">
+          <i class="fas fa-file-import"></i> File
+        </button>
+        <button id="clearBtn" class="btn btn-sm btn-danger" title="Clear submitted data">
+          <i class="fas fa-trash"></i> Clear
+        </button>
+        <button id="validateBtn" class="btn btn-sm btn-success" title="Validate JSON">
+          <i class="fas fa-check"></i> Validate
+        </button>
+        <button id="togglePanel" class="btn btn-sm" title="Collapse panel">
+          <i class="fas fa-chevron-down"></i>
+        </button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="format-hint">
+        Paste JSON array of buildings, landmarks, or paths. Accepted types:
+        <code>buildings</code>, <code>landmarks</code>, <code>paths</code>.
+        Each entry needs <code>id</code>, <code>name</code>, and type-specific fields.
+      </div>
+      <textarea id="jsonInput" placeholder='Paste JSON here...\nExample:\n[\n  { "id": "C15", "name": "New Block", "category": "Academic",\n    "polygon": [[26.634, 74.936], [26.634, 74.935], [26.633, 74.935], [26.633, 74.936]],\n    "entryPoints": [{"lat": 26.6335, "lng": 74.9355}] }\n]'></textarea>
+      <input type="file" id="fileInput" accept=".json" style="display:none">
+      <div id="importStatus" class="import-status"></div>
+      <div id="stats" class="stats hidden">
+        <span class="stat"><i class="fas fa-building"></i> <span id="statBuildings">0</span> buildings</span>
+        <span class="stat"><i class="fas fa-map-pin"></i> <span id="statLandmarks">0</span> landmarks</span>
+        <span class="stat"><i class="fas fa-route"></i> <span id="statPaths">0</span> paths</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+  <script src="../mapData.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
