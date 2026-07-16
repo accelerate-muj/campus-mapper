@@ -22,7 +22,7 @@
     "name": "MUJ Library",
     "lat": 26.841557,
     "lng": 75.565361,
-    "resolved": false,
+    "resolved": true,
     "entry": null,
     "floor": null
   },
@@ -112,7 +112,7 @@
     "name": "Lawn Tennis Court",
     "lat": 26.846341,
     "lng": 75.563502,
-    "resolved": false,
+    "resolved": true,
     "entry": {
       "points": [
         [
@@ -139,7 +139,7 @@
     "name": "Basketball Court",
     "lat": 26.84573,
     "lng": 75.566445,
-    "resolved": false,
+    "resolved": true,
     "entry": null,
     "floor": null
   },
@@ -166,7 +166,7 @@
     "name": "DSW Office- 001",
     "lat": 26.84224,
     "lng": 75.564352,
-    "resolved": false,
+    "resolved": true,
     "entry": {
       "points": [
         [
@@ -184,7 +184,7 @@
     "name": "University Stationary",
     "lat": 26.842726,
     "lng": 75.565678,
-    "resolved": false,
+    "resolved": true,
     "entry": {
       "points": [
         [
@@ -202,7 +202,7 @@
     "name": "TMA Pai Auditorium",
     "lat": 26.843943,
     "lng": 75.564224,
-    "resolved": false,
+    "resolved": true,
     "entry": {
       "points": [
         [
@@ -229,7 +229,7 @@
     "name": "Stationary",
     "lat": 26.842603,
     "lng": 75.565192,
-    "resolved": false,
+    "resolved": true,
     "entry": {
       "points": [
         [
@@ -247,7 +247,7 @@
     "name": "Basketball Court",
     "lat": 26.845704932549772,
     "lng": 75.56639764287769,
-    "resolved": false,
+    "resolved": true,
     "entry": null,
     "category": "sports",
     "floor": null

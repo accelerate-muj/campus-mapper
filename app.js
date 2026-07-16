@@ -635,7 +635,7 @@
   // Collect every endpoint of every path on the current site so new
   // path points snap to existing ones, treating the whole network as
   // one connected mega-path instead of disconnected fragments.
-  const PATH_SNAP_METERS = 15;
+  const PATH_SNAP_METERS = 20;
   let snapIndicators = [];
 
   function getPathEndpoints(){
@@ -1190,7 +1190,7 @@
         const lm = {
           id: 'lm_' + Date.now() + Math.random().toString(16).slice(2),
           name: name, lat: latlng.lat, lng: latlng.lng,
-          resolved: false, entry: null, category: category || null, floor: null
+          resolved: true, entry: null, category: category || null, floor: null
         };
         const jsonSnippet = JSON.stringify(lm, null, 2);
         showContributionPreview('landmark', name, jsonSnippet, currentSite, 'data/' + currentSite + '/landmarks.json');
@@ -1787,7 +1787,7 @@
   //  - CONNECT_THRESHOLD_METERS: how far a building/landmark is allowed to
   //    be from the nearest graph node before routing gives up on the path
   //    network entirely and falls back to a straight line.
-  const JUNCTION_SNAP_METERS = 12;
+  const JUNCTION_SNAP_METERS = 20;
   // A building's centroid can be tens of meters from its own edge (a
   // stadium or sports ground especially), so this threshold has to be
   // generous enough to cover "the nearest point on the building is near a
@@ -1838,6 +1838,48 @@
         }
         prevIdx = idx;
       });
+    });
+
+    // Snap entry points into the graph: each entry point becomes a node
+    // connected to the nearest path node so routing can reach buildings
+    // and landmarks through their traced entrances.
+    function snapEntryToGraph(entry){
+      if(!entry || !entry.points || !entry.points.length) return;
+      entry.points.forEach(function(pt){
+        const entryIdx = findOrCreateNode(pt[0], pt[1]);
+        let bestNode = -1, bestDist = Infinity;
+        for(let i = 0; i < nodes.length; i++){
+          if(i === entryIdx) continue;
+          const d = metersBetween(nodes[i].lat, nodes[i].lng, pt[0], pt[1]);
+          if(d < bestDist){ bestDist = d; bestNode = i; }
+        }
+        if(bestNode >= 0 && bestDist <= CONNECT_THRESHOLD_METERS){
+          addEdge(entryIdx, bestNode, bestDist);
+        }
+      });
+    }
+
+    siteData.buildings.forEach(function(b){
+      if(b.site !== site) return;
+      if(b.entry && b.entry.points && b.entry.points.length){
+        snapEntryToGraph(b.entry);
+      } else {
+        // No entry point: add the building center to the graph so routing
+        // can reach it through the nearest path node.
+        const pts = b.points || [];
+        if(pts.length){
+          const cLat = pts.reduce(function(s,p){ return s+p[0]; },0)/pts.length;
+          const cLng = pts.reduce(function(s,p){ return s+p[1]; },0)/pts.length;
+          snapEntryToGraph({ points: [[cLat, cLng]] });
+        }
+      }
+    });
+    siteData.landmarks.forEach(function(l){
+      if(l.entry && l.entry.points && l.entry.points.length){
+        snapEntryToGraph(l.entry);
+      } else {
+        snapEntryToGraph({ points: [[l.lat, l.lng]] });
+      }
     });
 
     // You draw each path as a separate stroke — that's a tracing
