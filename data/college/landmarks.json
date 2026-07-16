@@ -1,0 +1,245 @@
+[
+  {
+    "id": "lm11",
+    "name": "Cricket Stadium",
+    "lat": 26.845477,
+    "lng": 75.564174,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm12",
+    "name": "Academic Block-1",
+    "lat": 26.842423,
+    "lng": 75.564197,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm13",
+    "name": "MUJ Library",
+    "lat": 26.841557,
+    "lng": 75.565361,
+    "resolved": false,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm14",
+    "name": "Administrative Building",
+    "lat": 26.841726,
+    "lng": 75.565889,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm15",
+    "name": "Knowledge Centre",
+    "lat": 26.842388,
+    "lng": 75.566674,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm16",
+    "name": "Old Mess",
+    "lat": 26.84302,
+    "lng": 75.565245,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm17",
+    "name": "Grand Staircase",
+    "lat": 26.84251,
+    "lng": 75.565482,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm18",
+    "name": "Open Amphitheatre",
+    "lat": 26.843246,
+    "lng": 75.566324,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm19",
+    "name": "Academic Block-2",
+    "lat": 26.843076,
+    "lng": 75.56575,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm20",
+    "name": "ICICI ATM & Canteen",
+    "lat": 26.842609,
+    "lng": 75.564619,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm21",
+    "name": "Lecture Hall Complex",
+    "lat": 26.844198,
+    "lng": 75.564783,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm22",
+    "name": "Academic Block-3",
+    "lat": 26.844131,
+    "lng": 75.564346,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm23",
+    "name": "Lawn Tennis Court",
+    "lat": 26.846341,
+    "lng": 75.563502,
+    "resolved": false,
+    "entry": {
+      "points": [
+        [
+          26.84617241941416,
+          75.56358358603701
+        ]
+      ],
+      "connected": false,
+      "closed": false
+    },
+    "floor": null
+  },
+  {
+    "id": "lm24",
+    "name": "Tennis Court",
+    "lat": 26.845878,
+    "lng": 75.565267,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm25",
+    "name": "Basketball Court",
+    "lat": 26.84573,
+    "lng": 75.566445,
+    "resolved": false,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm26",
+    "name": "Football Ground",
+    "lat": 26.844402,
+    "lng": 75.565376,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm41",
+    "name": "To GHS (Subway)",
+    "lat": 26.841774,
+    "lng": 75.56387,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm42",
+    "name": "DSW Office- 001",
+    "lat": 26.84224,
+    "lng": 75.564352,
+    "resolved": false,
+    "entry": {
+      "points": [
+        [
+          26.842365507986027,
+          75.56418660211132
+        ]
+      ],
+      "connected": false,
+      "closed": false
+    },
+    "floor": null
+  },
+  {
+    "id": "lm43",
+    "name": "University Stationary",
+    "lat": 26.842726,
+    "lng": 75.565678,
+    "resolved": false,
+    "entry": {
+      "points": [
+        [
+          26.842725131486265,
+          75.56566650240484
+        ]
+      ],
+      "connected": false,
+      "closed": false
+    },
+    "floor": null
+  },
+  {
+    "id": "lm44",
+    "name": "TMA Pai Auditorium",
+    "lat": 26.843943,
+    "lng": 75.564224,
+    "resolved": false,
+    "entry": {
+      "points": [
+        [
+          26.843768995323874,
+          75.56453885225206
+        ]
+      ],
+      "connected": false,
+      "closed": false
+    },
+    "floor": null
+  },
+  {
+    "id": "lm47",
+    "name": "CS Labs",
+    "lat": 26.843922,
+    "lng": 75.56755,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm49",
+    "name": "Stationary",
+    "lat": 26.842603,
+    "lng": 75.565192,
+    "resolved": false,
+    "entry": {
+      "points": [
+        [
+          26.842604580463878,
+          75.56518214467539
+        ]
+      ],
+      "connected": false,
+      "closed": false
+    },
+    "floor": null
+  }
+]

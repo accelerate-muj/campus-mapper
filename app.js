@@ -1285,30 +1285,8 @@
       const nameSpan = document.createElement('span');
       nameSpan.className = 'lm-name';
       const catText = lm.category ? ' [' + (categoryOf(lm.category).label || lm.category) + ']' : '';
-      nameSpan.textContent = lm.name + (lm.floor ? ' (' + lm.floor + ')' : '') + catText;
+      nameSpan.textContent = lm.name + catText;
       nameSpan.title = lm.name + catText;
-
-      const floorBtn = document.createElement('button');
-      floorBtn.className = 'expand-btn';
-      floorBtn.textContent = '🏢';
-      floorBtn.title = lm.floor ? ('Floor: ' + lm.floor + ' — click to edit') : 'Set floor label';
-      floorBtn.addEventListener('click', function(ev){
-        ev.stopPropagation();
-        promptFloorLabel('landmark', lm.id);
-      });
-
-      const lmEntryCount = lm.entry ? lm.entry.points.length : 0;
-      const entryBtn = document.createElement('button');
-      entryBtn.className = 'expand-btn' + (lmEntryCount ? ' has-entry' : '');
-      entryBtn.textContent = '📍';
-      entryBtn.title = lmEntryCount
-        ? describeEntry(lm.entry) + ' set — click to add/remove, shift-click to clear all'
-        : 'Click the map to set this place\'s real entrance (click multiple times for multiple entries)';
-      entryBtn.addEventListener('click', function(ev){
-        ev.stopPropagation();
-        if(ev.shiftKey && lmEntryCount){ clearEntryPoint('landmark', lm.id); return; }
-        startEntryPlacement('landmark', lm.id);
-      });
 
       const btn = document.createElement('button');
       btn.className = 'expand-btn';
@@ -1324,8 +1302,6 @@
       controls.style.alignItems = 'center';
       controls.style.gap = '4px';
       controls.style.flex = 'none';
-      controls.appendChild(floorBtn);
-      controls.appendChild(entryBtn);
       controls.appendChild(btn);
       li.appendChild(controls);
       li.addEventListener('click', function(){
@@ -1425,7 +1401,6 @@
 
     list.forEach(function(b, idx){
       const baseName = b.name || ('Building ' + (idx + 1));
-      const displayName = baseName + (b.floor ? ' (' + b.floor + ')' : '');
       const cat = categoryOf(b.category);
       const li = document.createElement('li');
       const label = document.createElement('span');
@@ -1437,66 +1412,18 @@
       dot.style.background = cat.color;
       label.appendChild(dot);
       const nameSpan = document.createElement('span');
-      nameSpan.textContent = displayName;
+      nameSpan.textContent = baseName;
       nameSpan.style.overflow = 'hidden';
       nameSpan.style.textOverflow = 'ellipsis';
       nameSpan.style.whiteSpace = 'nowrap';
       label.appendChild(nameSpan);
-
-      const floorBtn = document.createElement('button');
-      floorBtn.className = 'expand-btn';
-      floorBtn.textContent = '🏢';
-      floorBtn.title = b.floor ? ('Floor: ' + b.floor + ' — click to edit') : 'Set floor label';
-      floorBtn.addEventListener('click', function(ev){
-        ev.stopPropagation();
-        promptFloorLabel('building', b.id);
-      });
-
-      const bEntryCount = b.entry ? b.entry.points.length : 0;
-      const entryBtn = document.createElement('button');
-      entryBtn.className = 'expand-btn' + (bEntryCount ? ' has-entry' : '');
-      entryBtn.textContent = '📍';
-      entryBtn.title = bEntryCount
-        ? describeEntry(b.entry) + ' set — click to add/remove, shift-click to clear all'
-        : 'Click the map to set this building\'s real entrance (click multiple times for multiple entries)';
-      entryBtn.addEventListener('click', function(ev){
-        ev.stopPropagation();
-        if(ev.shiftKey && bEntryCount){ clearEntryPoint('building', b.id); return; }
-        startEntryPlacement('building', b.id);
-      });
-
-      const x = document.createElement('span');
-      x.textContent = '✕';
-      x.className = 'x';
-      x.title = 'Delete this building';
-      x.addEventListener('click', function(ev){
-        ev.stopPropagation();
-        siteData.buildings = siteData.buildings.filter(bb => bb.id !== b.id);
-        if(b.landmarkId){
-          const lm = siteData.landmarks.find(l => l.id === b.landmarkId);
-          if(lm){ lm.resolved = false; renderLandmarks(); renderLandmarkList(); }
-        }
-        populateCategoryFilter();
-        renderBuildings();
-        populateDirectionSelects();
-      });
       li.appendChild(label);
-      const controls = document.createElement('span');
-      controls.style.display = 'flex';
-      controls.style.alignItems = 'center';
-      controls.style.gap = '4px';
-      controls.style.flex = 'none';
-      controls.appendChild(floorBtn);
-      controls.appendChild(entryBtn);
-      controls.appendChild(x);
-      li.appendChild(controls);
       li.addEventListener('click', function(){
         const latlngs = b.points.map(p => L.latLng(p[0], p[1]));
         map.fitBounds(L.latLngBounds(latlngs), { maxZoom: map.getMaxZoom() });
       });
       buildingListEl.appendChild(li);
     });
-    renderEntryMarkers();
   }
 
   categoryFilterEl.addEventListener('change', function(){

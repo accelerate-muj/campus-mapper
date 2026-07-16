@@ -1,0 +1,245 @@
+[
+  {
+    "id": "lm01",
+    "name": "B-11 & B-12",
+    "lat": 26.843337,
+    "lng": 75.561257,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm02",
+    "name": "B-9",
+    "lat": 26.842983,
+    "lng": 75.561664,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm03",
+    "name": "B-10",
+    "lat": 26.842517,
+    "lng": 75.561491,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm04",
+    "name": "B8",
+    "lat": 26.842826,
+    "lng": 75.562403,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm05",
+    "name": "B7",
+    "lat": 26.841679,
+    "lng": 75.561105,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm06",
+    "name": "Old Mess",
+    "lat": 26.841178,
+    "lng": 75.561603,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm07",
+    "name": "B-6",
+    "lat": 26.842069,
+    "lng": 75.561932,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm08",
+    "name": "B-4",
+    "lat": 26.841434,
+    "lng": 75.562172,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm09",
+    "name": "B-1 Badminton Court",
+    "lat": 26.841591,
+    "lng": 75.562875,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm10",
+    "name": "B-1 Common Area",
+    "lat": 26.841688,
+    "lng": 75.563146,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm27",
+    "name": "G-1 Badminton Court",
+    "lat": 26.840607,
+    "lng": 75.563577,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm28",
+    "name": "Moggers Park",
+    "lat": 26.840208,
+    "lng": 75.563356,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm29",
+    "name": "Basketball Court",
+    "lat": 26.840435,
+    "lng": 75.563218,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm30",
+    "name": "Laundry",
+    "lat": 26.840272,
+    "lng": 75.561588,
+    "resolved": false,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm31",
+    "name": "GHS Finance Office",
+    "lat": 26.840391,
+    "lng": 75.561475,
+    "resolved": false,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm32",
+    "name": "Bluedove Mess & Old Gym",
+    "lat": 26.840404,
+    "lng": 75.561834,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm33",
+    "name": "B7 Complex",
+    "lat": 26.841956,
+    "lng": 75.561225,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm34",
+    "name": "B7 Recreational Area",
+    "lat": 26.841736,
+    "lng": 75.561354,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm35",
+    "name": "B-2 Basketball Court",
+    "lat": 26.84207,
+    "lng": 75.562518,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm36",
+    "name": "B-2 Zone-2",
+    "lat": 26.842073,
+    "lng": 75.562433,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm37",
+    "name": "Flap Gate",
+    "lat": 26.841597,
+    "lng": 75.563468,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm38",
+    "name": "Subway",
+    "lat": 26.841783,
+    "lng": 75.563357,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm39",
+    "name": "B-2 Volleyball Court",
+    "lat": 26.842335,
+    "lng": 75.562671,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm40",
+    "name": "GHS Library",
+    "lat": 26.840251,
+    "lng": 75.561488,
+    "resolved": false,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm45",
+    "name": "G-1 Common Area",
+    "lat": 26.841067,
+    "lng": 75.563493,
+    "resolved": false,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm46",
+    "name": "Amul",
+    "lat": 26.840918,
+    "lng": 75.563605,
+    "resolved": false,
+    "entry": null,
+    "floor": null
+  },
+  {
+    "id": "lm48",
+    "name": "GHS Help Desk",
+    "lat": 26.841399,
+    "lng": 75.562971,
+    "resolved": true,
+    "entry": null,
+    "floor": null
+  }
+]
