@@ -8,4 +8,4 @@ jobs:
   add:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Triggered for issue ${{ github.event.issue.number }}"
+      - run: echo "Issue has Map Contribution: ${{ contains(github.event.issue.body, '## Map Contribution') }}"
