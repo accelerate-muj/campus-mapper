@@ -16,7 +16,7 @@
     // across the screen. A much bigger padding keeps that edge safely
     // outside the visible area at any rotation.
     renderer: L.svg({ padding: 1.5 })
-  }).setView([20.5937, 78.9629], 5);
+  }).setView([26.8443, 75.5653], 16);
 
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 20,
@@ -44,17 +44,34 @@
 
   const STORAGE_KEY = 'campusMapperData_v1';
 
-  // ---------- Building categories ----------
+  // ---------- Building/Landmark categories ----------
   const CATEGORIES = [
     { id: 'academic',  label: 'Academic',        color: '#4fb3a9' },
     { id: 'hostel',    label: 'Hostel Block',    color: '#e08e45' },
     { id: 'dining',    label: 'Dining / Mess',   color: '#d9634f' },
     { id: 'sports',    label: 'Sports & Rec',    color: '#6aa9e0' },
     { id: 'admin',     label: 'Admin / Services',color: '#b98be0' },
+    { id: 'teacher',   label: 'Teacher',         color: '#e6c84f' },
     { id: 'other',     label: 'Other',           color: '#93a1ab' }
   ];
   const CATEGORY_BY_ID = {};
   CATEGORIES.forEach(c => CATEGORY_BY_ID[c.id] = c);
+
+  function hashStrToColor(str){
+    let h = 0;
+    for(let i = 0; i < str.length; i++){ h = str.charCodeAt(i) + ((h << 5) - h); }
+    const hue = ((h % 360) + 360) % 360;
+    return 'hsl(' + hue + ', 55%, 55%)';
+  }
+
+  function getOrMakeCategory(id){
+    if(CATEGORY_BY_ID[id]) return CATEGORY_BY_ID[id];
+    const cat = { id: id, label: id.charAt(0).toUpperCase() + id.slice(1), color: hashStrToColor(id) };
+    CATEGORIES.push(cat);
+    CATEGORY_BY_ID[id] = cat;
+    return cat;
+  }
+
   function categoryOf(id){ return CATEGORY_BY_ID[id] || CATEGORY_BY_ID.other; }
 
   // Best-effort guess for buildings saved before categories existed, so
@@ -160,7 +177,7 @@
       name: b.name || null,
       site: (b.site === 'college' || b.site === 'hostel') ? b.site : 'college',
       landmarkId: b.landmarkId || null,
-      category: CATEGORY_BY_ID[b.category] ? b.category : guessCategory(b.name),
+      category: b.category ? getOrMakeCategory(b.category).id : guessCategory(b.name),
       points: (b.points || []).map(p => [p[0], p[1]]),
       // Optional real-world door/gate location(s), placed by hand on the
       // map — one or more points. When set, routing approaches whichever of
@@ -193,6 +210,7 @@
     return (list || []).map(l => ({
       id: l.id, name: l.name, lat: l.lat, lng: l.lng, resolved: !!l.resolved,
       entry: normalizeEntry(l.entry),
+      category: l.category || null,
       floor: l.floor || null
     }));
   }
@@ -977,6 +995,7 @@
   const modalTitle = document.getElementById('modalTitle');
   const modalNameInput = document.getElementById('modalNameInput');
   const modalCategoryChips = document.getElementById('modalCategoryChips');
+  const modalCustomCategory = document.getElementById('modalCustomCategory');
   const modalCancelBtn = document.getElementById('modalCancelBtn');
   const modalSaveBtn = document.getElementById('modalSaveBtn');
   let modalCallbacks = null;
@@ -987,7 +1006,7 @@
     CATEGORIES.forEach(function(cat){
       const chip = document.createElement('button');
       chip.type = 'button';
-      chip.className = 'chip' + (cat.id === modalSelectedCategory ? ' selected' : '');
+      chip.className = 'chip' + (cat.id === modalSelectedCategory && !modalCustomCategory.value.trim() ? ' selected' : '');
       const dot = document.createElement('span');
       dot.className = 'dot';
       dot.style.background = cat.color;
@@ -995,17 +1014,30 @@
       chip.appendChild(document.createTextNode(cat.label));
       chip.addEventListener('click', function(){
         modalSelectedCategory = cat.id;
+        modalCustomCategory.value = '';
         renderModalChips();
       });
       modalCategoryChips.appendChild(chip);
     });
   }
 
+  modalCustomCategory.addEventListener('input', function(){
+    const val = this.value.trim().toLowerCase().replace(/\s+/g, '-');
+    if(val){
+      modalSelectedCategory = val;
+      getOrMakeCategory(val);
+    } else {
+      modalSelectedCategory = 'other';
+    }
+    renderModalChips();
+  });
+
   function openNameCategoryModal(opts){
     modalCallbacks = opts;
-    modalTitle.textContent = opts.defaultName ? ('Confirm details for "' + opts.defaultName + '"') : 'Name this building';
+    modalTitle.textContent = opts.title || (opts.defaultName ? ('Confirm details for "' + opts.defaultName + '"') : 'Name this building');
     modalNameInput.value = opts.defaultName || '';
     modalSelectedCategory = opts.defaultCategory || 'other';
+    modalCustomCategory.value = '';
     renderModalChips();
     nameCategoryModal.style.display = 'flex';
     setTimeout(function(){ modalNameInput.focus(); }, 10);
@@ -1014,12 +1046,15 @@
   function closeNameCategoryModal(){
     nameCategoryModal.style.display = 'none';
     modalCallbacks = null;
+    modalCustomCategory.value = '';
   }
 
   modalSaveBtn.addEventListener('click', function(){
     if(!modalCallbacks) return;
     const name = modalNameInput.value.trim();
-    const category = modalSelectedCategory;
+    const customVal = modalCustomCategory.value.trim().toLowerCase().replace(/\s+/g, '-');
+    const category = customVal || modalSelectedCategory;
+    if(customVal) getOrMakeCategory(customVal);
     const cb = modalCallbacks.onSave;
     closeNameCategoryModal();
     if(cb) cb(name, category);
@@ -1074,19 +1109,29 @@
   }
 
   function handleNewLandmarkClick(latlng){
-    const name = (window.prompt('Name this landmark (e.g. "Block C2", "Volleyball Court"):', '') || '').trim();
     cancelAddLandmark();
-    if(!name){ setStatus('Landmark discarded — no name given.'); return; }
-    const lm = {
-      id: 'lm_' + Date.now() + Math.random().toString(16).slice(2),
-      name: name, lat: latlng.lat, lng: latlng.lng,
-      resolved: false, entry: null, floor: null
-    };
-    siteData.landmarks.push(lm);
-    saveData();
-    renderLandmarks();
-    renderLandmarkList();
-    setStatus('Landmark "' + name + '" added — trace it into a building anytime from Contribute → Trace Landmarks.');
+    openNameCategoryModal({
+      defaultName: '',
+      defaultCategory: 'other',
+      title: 'Name this landmark (e.g. "Block C2", "Volleyball Court"):',
+      onSave: function(name, category){
+        if(!name){ setStatus('Landmark discarded — no name given.'); return; }
+        const lm = {
+          id: 'lm_' + Date.now() + Math.random().toString(16).slice(2),
+          name: name, lat: latlng.lat, lng: latlng.lng,
+          resolved: false, entry: null, category: category || null, floor: null
+        };
+        siteData.landmarks.push(lm);
+        saveData();
+        renderLandmarks();
+        renderLandmarkList();
+        populateCategoryFilter();
+        setStatus('Landmark "' + name + '" added — trace it into a building anytime from Contribute → Trace Landmarks.');
+      },
+      onCancel: function(){
+        setStatus('Landmark placement cancelled.');
+      }
+    });
   }
 
   btnLandmarkPlaceCancel.addEventListener('click', function(){
@@ -1250,20 +1295,31 @@
     landmarksLayer.clearLayers();
     siteData.landmarks.forEach(function(lm){
       if(lm.resolved) return;
+      const cat = lm.category ? getOrMakeCategory(lm.category) : { color: '#4fb3a9' };
       const marker = L.circleMarker([lm.lat, lm.lng], {
-        radius: 6, color: '#4fb3a9', fillColor: '#1b2127', fillOpacity: 0.9, weight: 2
+        radius: 6, color: cat.color, fillColor: '#1b2127', fillOpacity: 0.9, weight: 2
       }).addTo(landmarksLayer);
 
       const popupEl = document.createElement('div');
       popupEl.style.cssText = 'font-size:13px; color:#14181c; min-width:150px;';
       const label = document.createElement('div');
       label.textContent = lm.name;
-      label.style.cssText = 'font-weight:700; margin-bottom:6px;';
+      label.style.cssText = 'font-weight:700; margin-bottom:2px;';
+      popupEl.appendChild(label);
+      if(lm.category){
+        const catLabel = document.createElement('div');
+        const catObj = getOrMakeCategory(lm.category);
+        catLabel.textContent = catObj.label;
+        catLabel.style.cssText = 'font-size:11px; color:#555; margin-bottom:6px;';
+        const catDot = document.createElement('span');
+        catDot.style.cssText = 'display:inline-block; width:8px; height:8px; border-radius:50%; background:' + catObj.color + '; margin-right:4px; vertical-align:middle;';
+        catLabel.prepend(catDot);
+        popupEl.appendChild(catLabel);
+      }
       const btn = document.createElement('button');
       btn.textContent = '▸ Mark building';
       btn.style.cssText = 'appearance:none; border:1px solid #313b44; background:#4fb3a9; color:#0d1414; font-weight:700; font-size:12px; padding:6px 10px; border-radius:6px; cursor:pointer;';
       btn.addEventListener('click', function(){ startBuildingDrawForLandmark(lm.id); marker.closePopup(); });
-      popupEl.appendChild(label);
       popupEl.appendChild(btn);
       marker.bindPopup(popupEl);
     });
@@ -1284,8 +1340,9 @@
       const li = document.createElement('li');
       const nameSpan = document.createElement('span');
       nameSpan.className = 'lm-name';
-      nameSpan.textContent = lm.name + (lm.floor ? ' (' + lm.floor + ')' : '');
-      nameSpan.title = lm.name;
+      const catText = lm.category ? ' [' + (categoryOf(lm.category).label || lm.category) + ']' : '';
+      nameSpan.textContent = lm.name + (lm.floor ? ' (' + lm.floor + ')' : '') + catText;
+      nameSpan.title = lm.name + catText;
 
       const floorBtn = document.createElement('button');
       floorBtn.className = 'expand-btn';
@@ -1356,7 +1413,10 @@
   }
 
   function populateCategoryFilter(){
-    const present = new Set(currentSiteBuildings().map(b => b.category || 'other'));
+    const present = new Set();
+    currentSiteBuildings().forEach(b => { if(b.category) { getOrMakeCategory(b.category); present.add(b.category); } });
+    siteData.landmarks.forEach(l => { if(l.category) { getOrMakeCategory(l.category); present.add(l.category); } });
+    present.add('other');
     const prev = activeCategoryFilter;
     categoryFilterEl.innerHTML = '';
     const allOpt = document.createElement('option');
@@ -1374,7 +1434,9 @@
 
   function renderCategoryLegend(list){
     categoryLegendEl.innerHTML = '';
-    const present = new Set(list.map(b => b.category || 'other'));
+    const present = new Set();
+    list.forEach(b => { if(b.category) { getOrMakeCategory(b.category); present.add(b.category); } });
+    present.add('other');
     CATEGORIES.forEach(function(cat){
       if(!present.has(cat.id)) return;
       const tag = document.createElement('span');
