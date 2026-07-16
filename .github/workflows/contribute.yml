@@ -1,22 +1,24 @@
-name: Process map contributions
+name: Contribute
 
 on:
   issues:
-    types: [opened, reopened]
+    types: [opened]
 
 jobs:
-  process-contribution:
+  add:
     runs-on: ubuntu-latest
+    if: contains(github.event.issue.body, '## Map Contribution')
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Process contribution and create PR
+      - run: node .github/process-contribution.js
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-        run: node .github/process-contribution.js
