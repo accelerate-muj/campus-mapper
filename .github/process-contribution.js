@@ -5,10 +5,18 @@ const path = require('path');
 const body = process.env.ISSUE_BODY;
 const issueNum = process.env.ISSUE_NUMBER;
 
+const git = (cmd) => {
+  try {
+    return execSync(cmd, { encoding: 'utf8', stdio: 'pipe' });
+  } catch (e) {
+    return null;
+  }
+};
+
 function comment(msg) {
   try {
     const safe = msg.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '');
-    execSync('gh issue comment ' + issueNum + ' --body "' + safe + '"', { encoding: 'utf8' });
+    execSync('gh issue comment ' + issueNum + ' --body "' + safe + '"', { encoding: 'utf8', stdio: 'pipe' });
   } catch (e) {
     console.log('Failed to comment: ' + e.message);
   }
@@ -85,17 +93,29 @@ const itemName = data.name || 'Unnamed';
 let branch = 'contribution/' + type + '/' + itemName;
 branch = branch.toLowerCase().replace(/[^a-z0-9._-]/g, '-').replace(/-+/g, '-').substring(0, 50);
 
-const git = (cmd) => execSync(cmd, { encoding: 'utf8', stdio: 'inherit' });
-git('git config user.name "github-actions[bot]"');
-git('git config user.email "github-actions[bot]@users.noreply.github.com"');
-git('git checkout -b ' + branch);
+execSync('git config user.name "github-actions[bot]"', { stdio: 'pipe' });
+execSync('git config user.email "github-actions[bot]@users.noreply.github.com"', { stdio: 'pipe' });
+
+const existingBranch = git('git rev-parse --verify ' + branch);
+if (existingBranch !== null) {
+  git('git checkout ' + branch);
+  git('git merge main --no-edit');
+} else {
+  git('git checkout -b ' + branch);
+}
+
 git('git add ' + targetFile);
 git('git commit -m "Add ' + type + ': ' + itemName + ' (' + site + ')"');
 git('git push origin ' + branch);
 
-const prTitle = 'Add ' + type + ': ' + itemName;
-const prBody = 'Automated PR from issue #' + issueNum + '.\n\nAdds **' + itemName + '** to `' + targetFile + '`.\n\nCloses #' + issueNum;
-git('gh pr create --title "' + prTitle.replace(/"/g, '\\"') + '" --body "' + prBody.replace(/"/g, '\\"') + '" --head ' + branch + ' --base main');
+const existingPR = git('gh pr list --head ' + branch + ' --json number --jq ".[0].number"');
+if (!existingPR || existingPR.trim() === '') {
+  const prTitle = 'Add ' + type + ': ' + itemName;
+  const prBody = 'Automated PR from issue #' + issueNum + '.\n\nAdds **' + itemName + '** to `' + targetFile + '`.\n\nCloses #' + issueNum;
+  execSync('gh pr create --title "' + prTitle.replace(/"/g, '\\"') + '" --body "' + prBody.replace(/"/g, '\\"') + '" --head ' + branch + ' --base main', { stdio: 'inherit' });
+  comment('Contribution processed!\n\n- **Item:** ' + itemName + ' (' + type + ')\n- **File:** `' + targetFile + '`\n- **Branch:** `' + branch + '`\n\nA pull request has been created automatically. Maintainer will review and merge.');
+} else {
+  comment('Contribution processed (PR updated)!\n\n- **Item:** ' + itemName + ' (' + type + ')\n- **File:** `' + targetFile + '`\n- **PR:** #' + existingPR.trim());
+}
 
-comment('Contribution processed!\n\n- **Item:** ' + itemName + ' (' + type + ')\n- **File:** `' + targetFile + '`\n- **Branch:** `' + branch + '`\n\nA pull request has been created automatically. Maintainer will review and merge.');
 console.log('Done.');

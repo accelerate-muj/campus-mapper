@@ -2,7 +2,7 @@ name: Contribute
 
 on:
   issues:
-    types: [opened]
+    types: [opened, reopened]
 
 jobs:
   add:
