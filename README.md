@@ -153,6 +153,12 @@ Both thresholds that govern this (`JUNCTION_SNAP_METERS`, `CONNECT_THRESHOLD_MET
 - Full-width contribute menu
 - Drawing toolbars at bottom of screen
 
+### Theming
+- Dark (the original design) and light, toggled from the top-left control
+- Follows `prefers-color-scheme` until you make an explicit choice, which is then remembered
+- Every colour resolves through a token in `style.css` — there are no raw hex or `rgba()` values outside the two theme blocks
+- Every text/background pairing in both themes is measured at WCAG AA or better (worst case 4.52:1)
+
 ### Accessibility
 - Every control has an accessible name; the Directions selects are labelled
 - The site toggle and sidebar tabs expose real state (`aria-pressed`, `aria-selected`) rather than colour alone
@@ -214,7 +220,7 @@ CDN assets are pinned to exact versions with SRI hashes. If you bump one, you mu
 
 ## What's Still Ahead
 
-- **Light theme** — the UI is dark-only; `style.css` still holds ~47 hardcoded colour literals that need centralising before a theme toggle is practical
+- **Category colours** — the per-category map colours in `app.js` are still hardcoded there. They sit on satellite imagery rather than on UI chrome, so they are not theme tokens, but they should still be checked for colour-blind safety
 - **Merge-friendly format** — One file per building (keyed by ID) instead of one monolithic JSON array, so concurrent PRs don't conflict
 - **Verification layer** — Review process or trusted-maintainer model for curating contributions at scale
 - **Irregular boundaries** — Polygon boundaries instead of rectangles only

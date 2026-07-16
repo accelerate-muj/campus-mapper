@@ -11,6 +11,53 @@
   const metersBetween = Geo.metersBetween;
   const densifyEntryLine = Geo.densifyEntryLine;
 
+  // ---------- Theme ----------
+  // The theme is already applied by the inline script in index.html's <head>
+  // (before first paint). This only wires up the toggle and keeps its label
+  // honest. Every colour resolves through a token in style.css, so switching
+  // is a single attribute on <html>.
+  const THEME_KEY = 'campusMapper.theme';
+  const themeToggle = document.getElementById('themeToggle');
+
+  function currentTheme(){
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+
+  function renderThemeToggle(){
+    const next = currentTheme() === 'light' ? 'dark' : 'light';
+    // The icon is decorative; the label describes what the button DOES, which
+    // is what a screen reader should hear — not what the theme currently is.
+    themeToggle.innerHTML = '<span aria-hidden="true">' + (currentTheme() === 'light' ? '☀' : '◐') + '</span>';
+    themeToggle.setAttribute('aria-label', 'Switch to ' + next + ' theme');
+    themeToggle.setAttribute('title', 'Switch to ' + next + ' theme');
+  }
+
+  function applyTheme(theme){
+    if(theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    else document.documentElement.removeAttribute('data-theme'); // dark is :root
+    renderThemeToggle();
+  }
+
+  themeToggle.addEventListener('click', function(){
+    const next = currentTheme() === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    try { localStorage.setItem(THEME_KEY, next); } catch(e){ /* storage blocked; theme still applies for this session */ }
+  });
+
+  // Follow the OS only while the user has not made an explicit choice.
+  if(window.matchMedia){
+    const media = window.matchMedia('(prefers-color-scheme: light)');
+    const onChange = function(e){
+      let saved = null;
+      try { saved = localStorage.getItem(THEME_KEY); } catch(err){ /* ignore */ }
+      if(!saved) applyTheme(e.matches ? 'light' : 'dark');
+    };
+    if(media.addEventListener) media.addEventListener('change', onChange);
+    else if(media.addListener) media.addListener(onChange); // Safari < 14
+  }
+
+  renderThemeToggle();
+
   // ---------- Map setup ----------
   const map = L.map('map', {
     minZoom: 2, maxZoom: 20, maxBoundsViscosity: 1.0, zoomControl: true,

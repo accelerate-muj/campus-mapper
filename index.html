@@ -23,6 +23,28 @@
         integrity="sha384-MtIdllebpZyms2pw9K3YJl8BEqrKNQCdSFAySjeglab6z2PkeFdF4Lb9cDsnxQuG"
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <link rel="stylesheet" href="style.css" />
+
+<!--
+  Applied before first paint, deliberately inline and blocking. Doing this from
+  app.js (loaded at the end of <body>) would paint the default dark theme first
+  and then repaint light — a visible flash on every load for light-mode users.
+  Kept to the minimum needed; the toggle itself is wired up in app.js.
+-->
+<script>
+  (function(){
+    var root = document.documentElement;
+    try {
+      var saved = localStorage.getItem('campusMapper.theme');
+      if (saved === 'light' || saved === 'dark') { root.setAttribute('data-theme', saved); return; }
+    } catch (e) {
+      // localStorage throws on file:// in some browsers and when storage is
+      // blocked. A theme preference is not worth breaking the page over.
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      root.setAttribute('data-theme', 'light');
+    }
+  })();
+</script>
 </head>
 <body>
 
@@ -38,6 +60,11 @@
   <button id="tabCollege" class="active" type="button" aria-pressed="true">College</button>
   <button id="tabHostel" type="button" aria-pressed="false">Hostel</button>
 </nav>
+
+<!-- Label and icon are set by app.js so they always describe the CURRENT
+     state; hardcoding them here would be wrong half the time. The fallback
+     label below only applies if app.js fails to load. -->
+<button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch colour theme"><span aria-hidden="true">◐</span></button>
 
 <div class="contribute-widget" id="contributeWidget">
   <button id="btnContribute" class="contribute-btn" type="button">

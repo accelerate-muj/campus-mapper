@@ -114,6 +114,24 @@ make a change pass, stop — that is the test doing its job.
 
 Found a security issue? Please open a private report rather than a public issue.
 
+## Colours and theming
+
+**Never put a raw colour in `style.css` outside the two theme blocks.** Every
+colour resolves through a token in `:root`. If you need a new one, add it to
+`:root` *and* to `:root[data-theme="light"]` — a token defined in only one
+place silently inherits the dark value in light mode, and something becomes
+unreadable.
+
+Check contrast when you pick a value. `--accent` is a live example of why:
+the dark-theme teal `#4fb3a9` is only ~2.4:1 on white, so light mode uses a
+darker teal chosen by measuring it against all four surfaces it lands on. A
+first attempt at that colour looked perfectly fine and failed AA in two places.
+Aim for 4.5:1 for normal text.
+
+Dark is the default (`:root`); light is the override. `data-theme` is set on
+`<html>` by a small inline script in the `<head>` — it must run before first
+paint, or light-mode users see a flash of dark on every load.
+
 ## Accessibility
 
 The map is the product, and it has to work for everyone using it.
