@@ -7,5 +7,6 @@ on:
 jobs:
   add:
     runs-on: ubuntu-latest
+    if: ${{ contains(github.event.issue.body, '## Map Contribution') }}
     steps:
-      - run: echo "Issue has Map Contribution: ${{ contains(github.event.issue.body, '## Map Contribution') }}"
+      - run: echo "Matched"
