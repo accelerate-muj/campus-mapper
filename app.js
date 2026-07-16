@@ -315,7 +315,7 @@
 
   function isAnyToolActive(){
     return !!(drawingBuilding || placingEntryFor || selectingEntryTarget ||
-              drawingPath || placingNewLandmark);
+              drawingPath || deletingPath || placingNewLandmark);
   }
 
   function refreshMapEditMode(){
@@ -415,7 +415,8 @@
   const menuAddBuilding = document.getElementById('menuAddBuilding');
   const menuAddLandmark = document.getElementById('menuAddLandmark');
   const menuEditEntry = document.getElementById('menuEditEntry');
-  const menuEditPaths = document.getElementById('menuEditPaths');
+  const menuAddPath = document.getElementById('menuAddPath');
+  const menuDeletePath = document.getElementById('menuDeletePath');
   const menuTraceLandmarks = document.getElementById('menuTraceLandmarks');
   const menuLandmarkBadge = document.getElementById('menuLandmarkBadge');
   const landmarksBox = document.getElementById('landmarksBox');
@@ -637,7 +638,7 @@
         color: '#6aa9e0', weight: 2.5, opacity: 0.8, dashArray: '6,4', lineCap: 'round'
       }).bindTooltip(p.name || 'Path', { sticky: true }).addTo(pathsLayer);
       line.on('click', function(ev){
-        if(!drawingPath) return;
+        if(!deletingPath) return;
         L.DomEvent.stopPropagation(ev);
         deletePath(p.id);
       });
@@ -1159,6 +1160,7 @@
     if(placingEntryFor) cancelEntryPlacement();
     if(selectingEntryTarget) cancelSelectEntryTarget();
     if(drawingPath) cancelPathEdit();
+    if(deletingPath) cancelDeletePath();
     if(placingNewLandmark) cancelAddLandmark();
     refreshMapEditMode();
   }
@@ -1236,18 +1238,20 @@
     refreshMapEditMode();
   }
 
-  // ---------------- Edit Paths ----------------
-  // Trace a new walking-path segment the same way a building is traced
-  // (click to place waypoints, Finish to save) — except it stays an open
-  // line, not a closed polygon, and only needs 2+ points. While this mode
-  // is active, clicking an EXISTING path segment deletes it instead
-  // (see renderPaths), so "edit" covers both adding and removing paths.
+  // ---------------- Add Path ----------------
+  // Trace a new walking-path segment (click to place waypoints, Finish to
+  // save). Only needs 2+ points and stays an open line.
   let drawingPath = false;
   let currentPathPoints = [];
   let pathVertexMarkers = [];
   let pathPreviewLine = null;
 
-  function startPathEdit(){
+  // ---------------- Delete Path ----------------
+  // Click an existing path to remove it. Uses a separate flag so the
+  // render function knows to make paths clickable for deletion.
+  let deletingPath = false;
+
+  function startAddPath(){
     cancelAllEditModes();
     drawingPath = true;
     currentPathPoints = [];
@@ -1255,7 +1259,15 @@
     freezeRotationGesturesForDrawing();
     map.getContainer().classList.add('drawing-cursor');
     pathActions.style.display = 'flex';
-    setStatus('Click to trace a new path (2+ points), then Finish. Click an existing path to delete it.', true);
+    setStatus('Click to trace a new path (2+ points), then Finish.', true);
+    refreshMapEditMode();
+  }
+
+  function startDeletePath(){
+    cancelAllEditModes();
+    deletingPath = true;
+    map.getContainer().classList.add('drawing-cursor');
+    setStatus('Click an existing path on the map to delete it. Press Escape when done.', true);
     refreshMapEditMode();
   }
 
@@ -1279,6 +1291,13 @@
   function cancelPathEdit(){
     endPathEditUI();
     setStatus('Path editing closed.');
+  }
+
+  function cancelDeletePath(){
+    deletingPath = false;
+    map.getContainer().classList.remove('drawing-cursor');
+    refreshMapEditMode();
+    setStatus('Path deletion mode closed.');
   }
 
   function updatePathPreview(){
@@ -1332,8 +1351,9 @@
   // ---------------- Contribute menu → mode wiring ----------------
   menuAddBuilding.addEventListener('click', startBuildingDraw);
   menuAddLandmark.addEventListener('click', startAddLandmark);
+  menuAddPath.addEventListener('click', startAddPath);
+  menuDeletePath.addEventListener('click', startDeletePath);
   menuEditEntry.addEventListener('click', startSelectEntryTarget);
-  menuEditPaths.addEventListener('click', startPathEdit);
   menuTraceLandmarks.addEventListener('click', function(){
     cancelAllEditModes();
     landmarksBox.style.display = 'block';
@@ -1352,6 +1372,7 @@
       if(placingNewLandmark){ cancelAddLandmark(); setStatus('Landmark placement cancelled.'); return; }
       if(selectingEntryTarget){ cancelSelectEntryTarget(); setStatus('Entry point editing cancelled.'); return; }
       if(placingEntryFor) cancelEntryPlacement();
+      if(deletingPath){ cancelDeletePath(); return; }
       if(drawingPath) cancelPathEdit();
       if(drawingBuilding) cancelBuildingDraw();
       if(drawingBoundary) cancelBoundaryDraw();
