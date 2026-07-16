@@ -1255,7 +1255,7 @@
     freezeRotationGesturesForDrawing();
     map.getContainer().classList.add('drawing-cursor');
     pathActions.style.display = 'flex';
-    setStatus('Click to trace a new path (2+ points), then Finish. Click an existing dashed path to delete it instead.', true);
+    setStatus('Click to trace a new path (2+ points), then Finish. Click an existing path to delete it.', true);
     refreshMapEditMode();
   }
 
