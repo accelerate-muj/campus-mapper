@@ -17,8 +17,10 @@ function run(cmd) {
 }
 
 function comment(msg) {
-  run('gh issue comment ' + issueNum + ' --body "' +
-    msg.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '') + '"');
+  const tmpFile = '/tmp/_comment_' + Date.now() + '.md';
+  fs.writeFileSync(tmpFile, msg);
+  run('gh issue comment ' + issueNum + ' --body-file ' + tmpFile);
+  try { fs.unlinkSync(tmpFile); } catch(e) {}
 }
 
 if (!body) { console.log('No issue body'); process.exit(0); }
