@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only: this workflow inspects code, it never writes to the repo.
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # No install step: the project has no dependencies, by design.
+      - name: Run test suite
+        run: node tests/run.js
+
+  data-integrity:
+    name: Data integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # data/ is edited by bot-authored PRs, so a malformed file is a realistic
+      # failure rather than a theoretical one.
+      - name: Validate every data/ JSON file
+        run: node .github/scripts/validate-data.js
+
+      # mapData.js is generated from data/ by build.js. If a PR edits one and
+      # not the other, the site silently serves stale data — the failure mode
+      # is invisible without this check.
+      - name: Check mapData.js is in sync with data/
+        run: |
+          set -euo pipefail
+          node build.js
+          if ! git diff --quiet -- mapData.js; then
+            echo "::error file=mapData.js::mapData.js is out of sync with data/. Run 'node build.js' and commit the result."
+            git diff --stat -- mapData.js
+            exit 1
+          fi
+          echo "mapData.js matches data/."

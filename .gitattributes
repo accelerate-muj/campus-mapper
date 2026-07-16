@@ -1,0 +1,25 @@
+# Normalise line endings. Without this, a contributor on Windows commits CRLF
+# and the GitHub Action's bash steps break in ways that are painful to
+# diagnose, because the failure only shows up on the Linux runner.
+* text=auto eol=lf
+
+# Windows-only files keep CRLF.
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Binary: never touch.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.woff binary
+*.woff2 binary
+
+# Generated from data/ by build.js. Marking it linguist-generated keeps it out
+# of language stats and collapses it by default in PR diffs, where a 4900-line
+# regenerated blob otherwise buries the actual change.
+mapData.js linguist-generated=true
+
+# KML is XML; treat it as text so diffs are readable.
+*.kml text eol=lf

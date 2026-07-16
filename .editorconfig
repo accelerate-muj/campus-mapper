@@ -1,0 +1,20 @@
+# Editor defaults, matching the style already used across the codebase.
+# Honoured natively by most editors with no plugin or install step, which suits
+# a project that deliberately has no toolchain.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+# Trailing whitespace is a line break in Markdown.
+trim_trailing_whitespace = false
+
+[*.{json,yml,yaml}]
+indent_size = 2

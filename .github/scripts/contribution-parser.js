@@ -170,7 +170,13 @@
       validatePoints(data.points, 'building', 'building');
 
       const entity = { id: id, name: name, site: site, category: category, points: data.points };
-      if (data.landmarkId !== undefined) entity.landmarkId = validateId(data.landmarkId);
+
+      // `landmarkId: null` is a real shape the app itself writes for a building
+      // that was traced directly rather than expanded from a landmark. Treat it
+      // as "no link", not as a malformed id.
+      if (data.landmarkId !== undefined) {
+        entity.landmarkId = data.landmarkId === null ? null : validateId(data.landmarkId);
+      }
       if (data.entry !== undefined) entity.entry = data.entry;
       entity.floor = floor;
 

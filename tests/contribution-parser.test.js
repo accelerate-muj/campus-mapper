@@ -93,6 +93,31 @@
       assert.equal(result.targetFile, 'data/college/buildings/academic.json');
     });
 
+    // Caught by validating the committed data/ files against these rules: one
+    // of the 38 real buildings ("B5") carries landmarkId: null, which the app
+    // writes for a building traced directly rather than expanded from a
+    // landmark. An earlier version of validateId rejected it.
+    it('accepts landmarkId: null as "not linked to a landmark"', function () {
+      const payload = Object.assign({}, BUILDING, { landmarkId: null });
+      const result = parseContribution(issueBody({ Type: 'building', Site: 'college' }, payload));
+
+      assert.equal(result.entity.landmarkId, null);
+    });
+
+    it('still rejects a landmarkId that is a malformed string', function () {
+      const payload = Object.assign({}, BUILDING, { landmarkId: '../../evil' });
+      assert.throws(function () {
+        parseContribution(issueBody({ Type: 'building', Site: 'college' }, payload));
+      }, /Invalid id/);
+    });
+
+    it('accepts floor: null, the shape every real building uses', function () {
+      const payload = Object.assign({}, BUILDING, { floor: null });
+      const result = parseContribution(issueBody({ Type: 'building', Site: 'college' }, payload));
+
+      assert.equal(result.entity.floor, null);
+    });
+
     it('drops unknown keys instead of merging them', function () {
       const payload = Object.assign({}, BUILDING, { isAdmin: true, __proto__key: 'x', injected: 'nope' });
       const result = parseContribution(issueBody({ Type: 'building', Site: 'college' }, payload));
