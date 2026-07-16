@@ -22,7 +22,7 @@
     "name": "MUJ Library",
     "lat": 26.841557,
     "lng": 75.565361,
-    "resolved": true,
+    "resolved": false,
     "entry": null,
     "floor": null
   },
@@ -112,7 +112,7 @@
     "name": "Lawn Tennis Court",
     "lat": 26.846341,
     "lng": 75.563502,
-    "resolved": true,
+    "resolved": false,
     "entry": {
       "points": [
         [
@@ -139,7 +139,7 @@
     "name": "Basketball Court",
     "lat": 26.84573,
     "lng": 75.566445,
-    "resolved": true,
+    "resolved": false,
     "entry": null,
     "floor": null
   },
@@ -157,7 +157,7 @@
     "name": "To GHS (Subway)",
     "lat": 26.841774,
     "lng": 75.56387,
-    "resolved": true,
+    "resolved": false,
     "entry": null,
     "floor": null
   },
@@ -166,7 +166,7 @@
     "name": "DSW Office- 001",
     "lat": 26.84224,
     "lng": 75.564352,
-    "resolved": true,
+    "resolved": false,
     "entry": {
       "points": [
         [
@@ -184,7 +184,7 @@
     "name": "University Stationary",
     "lat": 26.842726,
     "lng": 75.565678,
-    "resolved": true,
+    "resolved": false,
     "entry": {
       "points": [
         [
@@ -202,7 +202,7 @@
     "name": "TMA Pai Auditorium",
     "lat": 26.843943,
     "lng": 75.564224,
-    "resolved": true,
+    "resolved": false,
     "entry": {
       "points": [
         [
@@ -229,7 +229,7 @@
     "name": "Stationary",
     "lat": 26.842603,
     "lng": 75.565192,
-    "resolved": true,
+    "resolved": false,
     "entry": {
       "points": [
         [
@@ -247,7 +247,7 @@
     "name": "Basketball Court",
     "lat": 26.845704932549772,
     "lng": 75.56639764287769,
-    "resolved": true,
+    "resolved": false,
     "entry": null,
     "category": "sports",
     "floor": null
@@ -257,7 +257,7 @@
     "name": "Nescafe",
     "lat": 26.842633930924755,
     "lng": 75.56535587592525,
-    "resolved": true,
+    "resolved": false,
     "entry": null,
     "category": "dining",
     "floor": null

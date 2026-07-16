@@ -1537,10 +1537,11 @@
   function renderLandmarks(){
     landmarksLayer.clearLayers();
     siteData.landmarks.forEach(function(lm){
-      if(lm.resolved) return;
       const cat = lm.category ? getOrMakeCategory(lm.category) : { color: '#4fb3a9' };
       const marker = L.circleMarker([lm.lat, lm.lng], {
-        radius: 6, color: cat.color, fillColor: '#1b2127', fillOpacity: 0.9, weight: 2
+        radius: lm.resolved ? 5 : 6, color: cat.color,
+        fillColor: lm.resolved ? cat.color : '#1b2127',
+        fillOpacity: lm.resolved ? 0.6 : 0.9, weight: 2
       }).addTo(landmarksLayer);
 
       const popupEl = document.createElement('div');
@@ -1559,37 +1560,18 @@
         catLabel.prepend(catDot);
         popupEl.appendChild(catLabel);
       }
-      const btnRow = document.createElement('div');
-      btnRow.style.cssText = 'display:flex; gap:6px;';
-      const btnBuilding = document.createElement('button');
-      btnBuilding.textContent = '🏗️ Mark as Building';
-      btnBuilding.style.cssText = 'appearance:none; border:1px solid #313b44; background:#4fb3a9; color:#0d1414; font-weight:700; font-size:11px; padding:6px 10px; border-radius:6px; cursor:pointer;';
-      btnBuilding.addEventListener('click', function(){ startBuildingDrawForLandmark(lm.id); marker.closePopup(); });
-      btnRow.appendChild(btnBuilding);
-      const btnLandmark = document.createElement('button');
-      btnLandmark.textContent = '📌 Mark as Landmark';
-      btnLandmark.style.cssText = 'appearance:none; border:1px solid #313b44; background:#e08e45; color:#0d1414; font-weight:700; font-size:11px; padding:6px 10px; border-radius:6px; cursor:pointer;';
-      btnLandmark.addEventListener('click', function(){
-        marker.closePopup();
-        openNameCategoryModal({
-          title: 'Confirm landmark "' + lm.name + '"',
-          defaultName: lm.name,
-          defaultCategory: lm.category || 'other',
-          onSave: function(name, category){
-            if(!name){ setStatus('Landmark unchanged.'); return; }
-            lm.name = name;
-            lm.category = category || null;
-            lm.resolved = true;
-            renderLandmarks();
-            renderLandmarkList();
-            populateDirectionSelects();
-            setStatus('Landmark "' + name + '" confirmed.');
-          },
-          onCancel: function(){ setStatus('Landmark unchanged.'); }
-        });
-      });
-      btnRow.appendChild(btnLandmark);
-      popupEl.appendChild(btnRow);
+
+      if(!lm.resolved){
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex; gap:6px;';
+        const btnBuilding = document.createElement('button');
+        btnBuilding.textContent = '🏗️ Trace as Building';
+        btnBuilding.style.cssText = 'appearance:none; border:1px solid #313b44; background:#4fb3a9; color:#0d1414; font-weight:700; font-size:11px; padding:6px 10px; border-radius:6px; cursor:pointer;';
+        btnBuilding.addEventListener('click', function(){ startBuildingDrawForLandmark(lm.id); marker.closePopup(); });
+        btnRow.appendChild(btnBuilding);
+        popupEl.appendChild(btnRow);
+      }
+
       marker.bindPopup(popupEl);
     });
   }

@@ -290,57 +290,127 @@
     .sidebar-hide-btn{ display:none; }
     .sidebar-toggle{ display:none; }
 
+    /* Topbar: smaller, tighter */
     .topbar{
-      top:calc(10px + env(safe-area-inset-top)); padding:2px;
+      top:calc(8px + env(safe-area-inset-top)); padding:2px; gap:1px;
     }
-    .topbar button{ padding:10px 16px; font-size:13px; }
+    .topbar button{ padding:8px 14px; font-size:12px; }
 
+    /* Contribute widget: compact pill at top-right */
     .contribute-widget{
-      top:auto; right:auto;
-      top:calc(58px + env(safe-area-inset-top));
-      left:10px; right:10px;
+      top:calc(8px + env(safe-area-inset-top)); right:8px; left:auto;
     }
-    .contribute-btn{ width:100%; justify-content:center; }
-    .contribute-menu{ left:0; right:0; }
+    .contribute-btn{
+      padding:7px 12px; font-size:12px; border-radius:8px;
+    }
+    .contribute-btn svg{ width:13px; height:13px; }
+    .contribute-menu{
+      position:fixed; top:auto; left:0; right:0; bottom:0;
+      max-height:55vh; border-radius:14px 14px 0 0;
+      border:1px solid var(--line); border-bottom:none;
+      padding:8px 0 env(safe-area-inset-bottom);
+      z-index:2000;
+      box-shadow:0 -8px 30px rgba(0,0,0,0.6);
+    }
+    .contribute-menu.show{ animation: slideUp .2s ease; }
+    @keyframes slideUp{
+      from{ transform:translateY(100%); }
+      to{ transform:translateY(0); }
+    }
+    .menu-item{ padding:14px 18px; font-size:14px; }
+    .menu-section-label{ padding:10px 18px 4px; font-size:11px; }
 
-    /* Panel becomes a bottom sheet you can collapse */
+    /* ===== BOTTOM SHEET PANEL ===== */
     .panel{
       top:auto; left:0; right:0; bottom:0; width:auto;
-      max-height:42vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
-      border-radius:16px 16px 0 0; border-bottom:none;
-      padding:12px 14px calc(14px + env(safe-area-inset-bottom));
-      transition:transform .22s ease;
-      box-shadow:0 -8px 24px rgba(0,0,0,0.45);
+      max-height:50vh; overflow:hidden;
+      border-radius:14px 14px 0 0; border-bottom:none;
+      padding:0;
+      transition:transform .25s cubic-bezier(.4,0,.2,1);
+      box-shadow:0 -8px 24px rgba(0,0,0,0.5);
+      display:flex; flex-direction:column;
     }
-    .panel.collapsed{ transform:translateY(calc(100% - 46px)); }
+    .panel.collapsed{ transform:translateY(calc(100% - 52px)); }
 
+    /* Drag handle bar */
     .panel-toggle{
-      display:flex; align-items:center; justify-content:center; gap:6px;
-      position:absolute; top:-2px; left:50%; transform:translate(-50%,-100%);
-      width:64px; height:28px; background:var(--panel); border:1px solid var(--line);
-      border-bottom:none; border-radius:10px 10px 0 0; color:var(--text-dim);
-      font-size:16px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      width:100%; height:44px; flex-shrink:0; cursor:pointer;
+      background:var(--panel); border-bottom:1px solid var(--line);
     }
+    .panel-toggle::after{
+      content:''; width:36px; height:4px; border-radius:2px;
+      background:var(--line);
+    }
+    .panel.collapsed .panel-toggle::after{ background:var(--text-dim); }
 
-    .tool-row{ gap:10px; margin-bottom:10px; }
-    .btn{ padding:13px 8px; font-size:14.5px; min-height:46px; }
-    .action-row{ gap:10px; }
+    /* Scrollable content area inside the sheet */
+    .panel > *:not(.panel-toggle){ flex:1; min-height:0; }
+    .panel{ padding:0 env(safe-area-inset-right) calc(env(safe-area-inset-bottom)) env(safe-area-inset-left); }
 
+    /* Inner scroll container: status + tabs + content */
+    .panel > .status-strip,
+    .panel > .sidebar-tabs,
+    .panel > .tab-panel,
+    .panel > .status,
+    .panel > #statusBox{ padding-left:14px; padding-right:14px; }
+
+    /* Status strip: tiny, inline */
+    .status-strip{ padding:8px 14px 0; margin-bottom:4px; flex-wrap:nowrap; overflow-x:auto; }
+    .status-pill{ font-size:9px; padding:2px 6px; white-space:nowrap; }
+
+    /* Tabs: compact, full-width */
+    .sidebar-tabs{ margin:0 14px 6px; border-radius:6px; padding:2px; }
+    .sidebar-tab{ padding:8px 0; font-size:12px; font-weight:700; }
+
+    /* Tab panels: scrollable */
+    .tab-panel{ overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 14px; }
+    .tab-panel.active{ display:block; }
+
+    /* Section cards: no left border, just spacing */
+    .section-card{
+      border-left:none; padding-left:0; margin-bottom:10px;
+      border-top:1px solid var(--line); padding-top:10px;
+    }
+    .section-card:first-child{ border-top:none; padding-top:0; }
+    .section-card h2{ font-size:10px; margin-bottom:6px; }
+
+    /* Building/landmark lists: fill available space */
+    .building-list{ max-height:none; }
+    #buildingList{ max-height:none; }
+    #landmarkList{ max-height:none; }
+    .building-list li{ padding:10px 8px; font-size:13px; }
+    #landmarkList li{ padding:10px 8px; font-size:13px; }
+    .expand-btn{ width:36px; height:36px; font-size:15px; }
+
+    /* Status text at bottom: minimal */
+    .status{ font-size:11px; min-height:auto; padding:8px 14px; margin:0; border:none; color:var(--text-dim); }
+
+    /* Buttons: bigger touch targets */
+    .tool-row{ gap:8px; margin-bottom:8px; }
+    .btn{ padding:12px 8px; font-size:14px; min-height:48px; border-radius:10px; }
+
+    /* Edit toolbar: above the sheet */
     .edit-toolbar{
-      left:10px; right:10px; bottom:calc(46px + env(safe-area-inset-bottom) + 10px);
+      left:8px; right:8px; bottom:calc(56px + env(safe-area-inset-bottom));
       transform:none; max-width:none; flex-wrap:wrap;
+      padding:8px 10px; gap:8px;
     }
+    .edit-toolbar .btn{ padding:10px 12px; font-size:13px; min-height:44px; }
 
-    #buildingList{ max-height:22vh; }
-    #landmarkList{ max-height:22vh; }
-    #landmarkList li{ padding:10px 8px; font-size:13.5px; }
-    .expand-btn{ width:34px; height:34px; font-size:16px; }
-    #buildingList li{ padding:10px 8px; font-size:13.5px; }
+    /* Modals: full-width on mobile */
+    .modal-box{
+      width:calc(100vw - 24px); max-width:none; padding:16px;
+    }
+    .modal-box input{
+      font-size:16px; /* prevents iOS zoom on focus */
+      padding:12px 12px;
+    }
+    .json-preview{ font-size:10px; max-height:35vh; }
 
-    .sidebar-tabs{ margin-bottom:10px; }
-    .sidebar-tab{ padding:9px 12px; font-size:13px; }
-    .json-preview{ font-size:10.5px; max-height:180px; }
+    /* Contribute menu touch feedback */
+    .contribute-menu .menu-item:active{ background:var(--accent); color:#0d1414; }
 
-    /* Bigger hit target for the leaflet zoom/rotate controls */
-    .leaflet-touch .leaflet-bar a{ width:38px; height:38px; line-height:38px; }
+    /* Leaflet controls: bigger */
+    .leaflet-touch .leaflet-bar a{ width:40px; height:40px; line-height:40px; }
   }
