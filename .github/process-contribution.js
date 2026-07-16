@@ -5,27 +5,22 @@ const path = require('path');
 const body = process.env.ISSUE_BODY;
 const issueNum = process.env.ISSUE_NUMBER;
 
-const git = (cmd) => {
+function run(cmd) {
+  console.log('> ' + cmd);
   try {
-    return execSync(cmd, { encoding: 'utf8', stdio: 'pipe' });
+    return execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim();
   } catch (e) {
+    console.log('  ERROR: ' + (e.stderr || e.message).toString().slice(0, 500));
     return null;
   }
-};
+}
 
 function comment(msg) {
-  try {
-    const safe = msg.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '');
-    execSync('gh issue comment ' + issueNum + ' --body "' + safe + '"', { encoding: 'utf8', stdio: 'pipe' });
-  } catch (e) {
-    console.log('Failed to comment: ' + e.message);
-  }
+  run('gh issue comment ' + issueNum + ' --body "' +
+    msg.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '') + '"');
 }
 
-if (!body) {
-  console.log('No issue body found');
-  process.exit(0);
-}
+if (!body) { console.log('No issue body'); process.exit(0); }
 
 const typeMatch = body.match(/\*\*Type:\*\*\s*(\w+)/);
 const siteMatch = body.match(/\*\*Site:\*\*\s*(\w+)/);
@@ -38,50 +33,34 @@ const site = siteMatch ? siteMatch[1] : 'college';
 const category = catMatch ? catMatch[1] : 'other';
 const filePath = fileMatch ? fileMatch[1] : null;
 
-console.log('Parsed type=' + type + ' site=' + site + ' category=' + category + ' filePath=' + filePath);
+console.log('type=' + type + ' site=' + site + ' category=' + category);
 
 if (!type || !['building', 'landmark', 'path'].includes(type)) {
-  console.log('Invalid or missing type: ' + type);
-  comment('Could not process this contribution. Invalid or missing type: `' + (type || 'none') + '`.');
+  comment('Could not process: invalid type `' + (type || 'none') + '`.');
   process.exit(0);
 }
-
 if (!jsonMatch) {
-  console.log('No JSON found in issue body');
-  comment('Could not process this contribution. No JSON code block found.');
+  comment('Could not process: no JSON code block found.');
   process.exit(0);
 }
 
 let data;
-try {
-  data = JSON.parse(jsonMatch[1]);
-} catch (e) {
-  console.log('Invalid JSON: ' + e.message);
-  comment('Could not process this contribution. Invalid JSON: ' + e.message);
+try { data = JSON.parse(jsonMatch[1]); } catch (e) {
+  comment('Could not process: invalid JSON — ' + e.message);
   process.exit(0);
 }
 
-let targetFile;
-if (filePath) {
-  targetFile = filePath;
-} else if (type === 'building') {
-  targetFile = 'data/' + site + '/buildings/' + category + '.json';
-} else if (type === 'landmark') {
-  targetFile = 'data/' + site + '/landmarks.json';
-} else {
-  targetFile = 'data/' + site + '/paths.json';
-}
+let targetFile = filePath ||
+  (type === 'building' ? 'data/' + site + '/buildings/' + category + '.json' :
+   type === 'landmark' ? 'data/' + site + '/landmarks.json' :
+   'data/' + site + '/paths.json');
 
-console.log('Target file: ' + targetFile);
+console.log('target=' + targetFile);
 
 let items = [];
 if (fs.existsSync(targetFile)) {
-  try {
-    items = JSON.parse(fs.readFileSync(targetFile, 'utf8'));
-    if (!Array.isArray(items)) items = [];
-  } catch (e) {
-    items = [];
-  }
+  try { items = JSON.parse(fs.readFileSync(targetFile, 'utf8')); if (!Array.isArray(items)) items = []; }
+  catch (e) { items = []; }
 }
 
 items.push(data);
@@ -93,29 +72,34 @@ const itemName = data.name || 'Unnamed';
 let branch = 'contribution/' + type + '/' + itemName;
 branch = branch.toLowerCase().replace(/[^a-z0-9._-]/g, '-').replace(/-+/g, '-').substring(0, 50);
 
-execSync('git config user.name "github-actions[bot]"', { stdio: 'pipe' });
-execSync('git config user.email "github-actions[bot]@users.noreply.github.com"', { stdio: 'pipe' });
+run('git config user.name "github-actions[bot]"');
+run('git config user.email "github-actions[bot]@users.noreply.github.com"');
 
-const existingBranch = git('git rev-parse --verify ' + branch);
+const existingBranch = run('git rev-parse --verify ' + branch);
 if (existingBranch !== null) {
-  git('git checkout ' + branch);
-  git('git merge main --no-edit');
+  run('git checkout ' + branch);
+  run('git merge main --no-edit');
 } else {
-  git('git checkout -b ' + branch);
+  run('git checkout -b ' + branch);
 }
 
-git('git add ' + targetFile);
-git('git commit -m "Add ' + type + ': ' + itemName + ' (' + site + ')"');
-git('git push origin ' + branch);
+run('git add ' + targetFile);
+run('git commit -m "Add ' + type + ': ' + itemName + ' (' + site + ')"');
+run('git push origin ' + branch);
 
-const existingPR = git('gh pr list --head ' + branch + ' --json number --jq ".[0].number"');
-if (!existingPR || existingPR.trim() === '') {
+const existingPR = run('gh pr list --head ' + branch + ' --json number --jq ".[0].number"');
+if (!existingPR) {
   const prTitle = 'Add ' + type + ': ' + itemName;
   const prBody = 'Automated PR from issue #' + issueNum + '.\n\nAdds **' + itemName + '** to `' + targetFile + '`.\n\nCloses #' + issueNum;
-  execSync('gh pr create --title "' + prTitle.replace(/"/g, '\\"') + '" --body "' + prBody.replace(/"/g, '\\"') + '" --head ' + branch + ' --base main', { stdio: 'inherit' });
-  comment('Contribution processed!\n\n- **Item:** ' + itemName + ' (' + type + ')\n- **File:** `' + targetFile + '`\n- **Branch:** `' + branch + '`\n\nA pull request has been created automatically. Maintainer will review and merge.');
+  const prResult = run('gh pr create --title "' + prTitle.replace(/"/g, '\\"') + '" --body "' + prBody.replace(/"/g, '\\"') + '" --head ' + branch + ' --base main');
+  if (prResult) {
+    comment('Contribution processed!\n\n- **Item:** ' + itemName + ' (' + type + ')\n- **File:** `' + targetFile + '`\n- **PR:** Created\n\nMaintainer will review and merge.');
+  } else {
+    run('git push origin ' + branch);
+    comment('Contribution data added to branch `' + branch + '` in file `' + targetFile + '`.\n\nPR creation failed (check repo Settings → Actions → "Allow GitHub Actions to create and approve pull requests"). Maintainer can merge manually.');
+  }
 } else {
-  comment('Contribution processed (PR updated)!\n\n- **Item:** ' + itemName + ' (' + type + ')\n- **File:** `' + targetFile + '`\n- **PR:** #' + existingPR.trim());
+  comment('Contribution processed (PR updated)! **Item:** ' + itemName + ' (' + type + ') → PR #' + existingPR);
 }
 
 console.log('Done.');
