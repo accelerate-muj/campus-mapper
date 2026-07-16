@@ -53,6 +53,11 @@ verify/                  Standalone tool for reviewing contributor PRs
 lets the routing engine be tested without a browser. Everything loads as a
 plain `<script>`; there is deliberately no bundler, so `file://` keeps working.
 
+[ARCHITECTURE.md](ARCHITECTURE.md) explains why it's shaped this way, and what
+the trade-offs cost. [DISASTER_RECOVERY.md](DISASTER_RECOVERY.md) covers
+rollback and the dependency risks. [CHANGELOG.md](CHANGELOG.md) tracks what
+changed.
+
 ### How data flows
 
 ```mermaid
