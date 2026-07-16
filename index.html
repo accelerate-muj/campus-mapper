@@ -24,14 +24,14 @@
     Contribute
   </button>
   <div class="contribute-menu" id="contributeMenu">
-    <div class="menu-section-label">Edit the map</div>
-    <button id="menuAddBuilding" class="menu-item" type="button">🏗️ <span>Add Building</span></button>
-    <button id="menuAddLandmark" class="menu-item" type="button">📌 <span>Add Landmark</span></button>
-    <button id="menuEditEntry" class="menu-item" type="button">🚪 <span>Add / Edit Entry Point</span></button>
-    <button id="menuEditPaths" class="menu-item" type="button">🛤️ <span>Edit Paths</span></button>
+    <div class="menu-section-label">Add to the map</div>
+    <button id="menuAddLandmark" class="menu-item" type="button">📌 <span>Add Landmark (Point)</span></button>
+    <button id="menuAddBuilding" class="menu-item" type="button">🏗️ <span>Add Building (Polygon)</span></button>
     <button id="menuTraceLandmarks" class="menu-item" type="button">🧭 <span>Trace Landmarks</span> <span id="menuLandmarkBadge" class="menu-badge"></span></button>
     <div class="menu-divider"></div>
-    <button id="btnCopyJSON" class="menu-item" type="button">⬇️ <span>Export Map Data</span></button>
+    <div class="menu-section-label">Edit existing</div>
+    <button id="menuEditEntry" class="menu-item" type="button">🚪 <span>Add / Edit Entry Point</span></button>
+    <button id="menuEditPaths" class="menu-item" type="button">🛤️ <span>Edit Paths</span></button>
     <div class="menu-divider"></div>
     <a id="contribEditLink" class="menu-item" href="#" target="_blank" rel="noopener">Edit this file on GitHub</a>
     <a id="contribIssueLink" class="menu-item" href="#" target="_blank" rel="noopener">Report an issue</a>
@@ -48,33 +48,42 @@
     <span id="compassLockedBadge" class="status-pill">Direction locked</span>
   </div>
 
-  <div class="section-card buildings-box" id="landmarksBox" style="display:none;">
-    <h2>
-      Landmarks to trace <span id="landmarkCount" style="color:var(--text-dim); font-weight:400;"></span>
-      <button id="btnCloseLandmarks" class="expand-btn" style="float:right;" title="Close">✕</button>
-    </h2>
-    <ul id="landmarkList"></ul>
-    <div id="landmarkEmptyNote" class="empty-note" style="display:none;">All landmarks traced 🎉</div>
+  <div class="sidebar-tabs">
+    <button class="sidebar-tab active" data-tab="map">Map</button>
+    <button class="sidebar-tab" data-tab="directions">Directions</button>
   </div>
 
-  <div class="section-card buildings-box" id="directionsBox">
-    <h2>Directions</h2>
-    <div style="font-size:12px; color:var(--text-dim); margin-bottom:8px;">Routes over the traced path network where possible; falls back to a straight line if a building is too far from any path.</div>
-    <select id="dirFrom" class="cat-filter" style="margin-bottom:6px;"></select>
-    <select id="dirTo" class="cat-filter" style="margin-bottom:8px;"></select>
-    <div class="tool-row">
-      <button id="btnShowRoute" class="btn full">Show Route</button>
-      <button id="btnClearRoute" class="btn full">Clear</button>
+  <div class="tab-panel active" id="mapPanel">
+    <div class="section-card buildings-box" id="landmarksBox" style="display:none;">
+      <h2>
+        Landmarks to trace <span id="landmarkCount" style="color:var(--text-dim); font-weight:400;"></span>
+        <button id="btnCloseLandmarks" class="expand-btn" style="float:right;" title="Close">✕</button>
+      </h2>
+      <ul id="landmarkList"></ul>
+      <div id="landmarkEmptyNote" class="empty-note" style="display:none;">All landmarks traced</div>
     </div>
-    <div id="routeReadout" class="status" style="display:none;"></div>
+
+    <div class="section-card buildings-box" id="buildingsSection">
+      <h2>Buildings <span id="buildingCount" style="color:var(--text-dim); font-weight:400;"></span></h2>
+      <select id="categoryFilter" class="cat-filter"></select>
+      <ul id="buildingList"></ul>
+      <div id="emptyNote" class="empty-note">No buildings yet.</div>
+      <div id="categoryLegend" class="cat-legend"></div>
+    </div>
   </div>
 
-  <div class="section-card buildings-box">
-    <h2>Buildings <span id="buildingCount" style="color:var(--text-dim); font-weight:400;"></span></h2>
-    <select id="categoryFilter" class="cat-filter"></select>
-    <ul id="buildingList"></ul>
-    <div id="emptyNote" class="empty-note">No buildings yet.</div>
-    <div id="categoryLegend" class="cat-legend"></div>
+  <div class="tab-panel" id="directionsPanel">
+    <div class="section-card buildings-box" id="directionsBox">
+      <h2>Directions</h2>
+      <div style="font-size:12px; color:var(--text-dim); margin-bottom:8px;">Routes over the traced path network where possible; falls back to a straight line if a building is too far from any path.</div>
+      <select id="dirFrom" class="cat-filter" style="margin-bottom:6px;"></select>
+      <select id="dirTo" class="cat-filter" style="margin-bottom:8px;"></select>
+      <div class="tool-row">
+        <button id="btnShowRoute" class="btn full">Show Route</button>
+        <button id="btnClearRoute" class="btn full">Clear</button>
+      </div>
+      <div id="routeReadout" class="status" style="display:none;"></div>
+    </div>
   </div>
 
   <div id="statusBox" class="status">Tap a place below, or use Show Route to get directions.</div>
@@ -127,6 +136,19 @@
       <button id="modalCancelBtn" class="btn danger full">Cancel</button>
       <button id="modalSaveBtn" class="btn full">Save</button>
     </div>
+  </div>
+</div>
+
+<div id="contributionModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box" style="width:440px;">
+    <h3 id="contributionTitle">Contribution Preview</h3>
+    <p id="contributionDesc" class="modal-desc"></p>
+    <pre id="contributionJSON" class="json-preview"></pre>
+    <div class="tool-row">
+      <button id="btnCopyContribution" class="btn">📋 Copy JSON</button>
+      <button id="btnOpenGitHub" class="btn">🔗 Open on GitHub</button>
+    </div>
+    <button id="btnCloseContribution" class="btn full" style="margin-top:8px;">Close</button>
   </div>
 </div>
 

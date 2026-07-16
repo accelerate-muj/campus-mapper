@@ -37,12 +37,6 @@
   // buried in code. To publish changes: click "Copy JSON", paste it over
   // the contents of that block, then commit/PR the file.
   const BAKED_DATA = window.BAKED_DATA;
-  // Snapshot of exactly what's baked into the file right now. Used to
-  // detect "the file on disk changed since I last saved a local draft" —
-  // see loadData() below.
-  const BAKED_SNAPSHOT = JSON.stringify(BAKED_DATA);
-
-  const STORAGE_KEY = 'campusMapperData_v1';
 
   // ---------- Building/Landmark categories ----------
   const CATEGORIES = [
@@ -238,7 +232,8 @@
     };
   }
 
-  // Start from the committed BAKED_DATA (what's actually in the file/repo).
+  // ---------- Site data ----------
+  // Loaded from mapData.js — the committed source of truth.
   let siteData = {
     college: cloneSite(BAKED_DATA.college, BAKED_DATA.finalized),
     hostel: cloneSite(BAKED_DATA.hostel, BAKED_DATA.finalized),
@@ -248,86 +243,51 @@
     compass: cloneCompass(BAKED_DATA.compass)
   };
 
-  // localStorage is only a LOCAL DRAFT — it recovers work-in-progress if
-  // you refresh the page before copying/publishing. It is never shared
-  // with anyone; the mapData JSON block (and whatever you Copy) is the
-  // only thing that actually gets shared.
-  //
-  // THE BUG THIS FIXES: previously, the draft always won on load, even if
-  // you'd hand-edited the mapData block in the file itself. So editing the
-  // file directly appeared to do nothing on reload — the stale browser
-  // draft from an earlier session silently overrode it every time.
-  //
-  // Fix: each saved draft also stores a snapshot of what BAKED_DATA looked
-  // like at the moment it was saved. On load, we only trust the draft if
-  // that snapshot still matches the file's current mapData block — i.e.
-  // nothing changed in the file since. If the file changed (you edited it,
-  // pulled new buildings, redrew a boundary, etc.), the file wins and the
-  // stale draft is discarded.
-  function loadData(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return;
-      const parsed = JSON.parse(raw);
-      if(parsed.__bakedSnapshot !== BAKED_SNAPSHOT){
-        console.info('Campus Mapper: mapData file changed since last local draft — using file contents, discarding stale draft.');
-        return;
-      }
-      ['college','hostel'].forEach(k=>{
-        if(parsed[k]) siteData[k] = cloneSite(parsed[k], parsed.finalized);
-      });
-      siteData.buildings = migrateBuildings(parsed);
-      if(parsed.landmarks) siteData.landmarks = cloneLandmarks(parsed.landmarks);
-      if(parsed.paths) siteData.paths = clonePaths(parsed.paths);
-      if(parsed.compass) siteData.compass = cloneCompass(parsed.compass);
-    }catch(e){ console.warn('Could not load local draft', e); }
-  }
-
-  function saveData(){
-    try{
-      const toSave = Object.assign(currentDataForExport(), { __bakedSnapshot: BAKED_SNAPSHOT });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-    }catch(e){ console.warn('Could not save local draft', e); }
-  }
-
-  loadData();
-
   // ---------- Copy current state as JSON ----------
   // Builds the exact object that belongs inside the <script id="mapData">
   // block, pretty-prints it, and copies it to the clipboard so you can
   // paste it directly over that block before committing.
-  function currentDataForExport(){
-    return {
-      college: cloneSite(siteData.college),
-      hostel: cloneSite(siteData.hostel),
-      buildings: cloneBuildings(siteData.buildings),
-      landmarks: cloneLandmarks(siteData.landmarks),
-      paths: clonePaths(siteData.paths),
-      compass: cloneCompass(siteData.compass)
+  // ---------- Contribution Preview ----------
+  // When a user adds a building, landmark, or path, instead of saving
+  // directly, we generate a JSON snippet they can copy and submit as a PR.
+  const contributionModal = document.getElementById('contributionModal');
+  const contributionTitle = document.getElementById('contributionTitle');
+  const contributionDesc = document.getElementById('contributionDesc');
+  const contributionJSON = document.getElementById('contributionJSON');
+  const btnCopyContribution = document.getElementById('btnCopyContribution');
+  const btnOpenGitHub = document.getElementById('btnOpenGitHub');
+  const btnCloseContribution = document.getElementById('btnCloseContribution');
+
+  function showContributionPreview(type, name, jsonSnippet, site){
+    const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+    contributionTitle.textContent = 'Submit: New ' + typeLabel;
+    contributionDesc.textContent = 'Copy the JSON below and add it to the ' + type + 's array in mapData.js, then create a pull request.' + (site ? ' (Site: ' + site + ')' : '');
+    contributionJSON.textContent = jsonSnippet;
+    contributionModal.style.display = 'flex';
+
+    btnCopyContribution.textContent = '📋 Copy JSON';
+    btnCopyContribution.onclick = function(){
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(jsonSnippet).then(function(){
+          btnCopyContribution.textContent = 'Copied!';
+          setTimeout(function(){ btnCopyContribution.textContent = '📋 Copy JSON'; }, 1800);
+        });
+      } else {
+        window.prompt('Copy this JSON:', jsonSnippet);
+      }
+    };
+
+    btnOpenGitHub.onclick = function(){
+      window.open('https://github.com/' + GITHUB_REPO + '/edit/' + GITHUB_BRANCH + '/' + GITHUB_FILE_PATH, '_blank');
+    };
+
+    btnCloseContribution.onclick = function(){
+      contributionModal.style.display = 'none';
     };
   }
-
-  async function copyJSON(){
-    const btn = document.getElementById('btnCopyJSON');
-    const originalLabel = btn.textContent;
-    const text = JSON.stringify(currentDataForExport(), null, 2);
-    try{
-      if(navigator.clipboard && navigator.clipboard.writeText){
-        await navigator.clipboard.writeText(text);
-      }else{
-        throw new Error('no clipboard API');
-      }
-      btn.textContent = 'Copied ✓';
-      setStatus('Copied JSON to clipboard — paste it over the contents of mapData.js, then commit/PR.');
-    }catch(err){
-      // Fallback: show it in a prompt box so it can be selected/copied manually.
-      window.prompt('Copy this JS code and paste it over the entire contents of mapData.js:', 'window.BAKED_DATA = ' + text + ';');
-      btn.textContent = originalLabel;
-      setStatus('Clipboard access unavailable — the JSON was shown in a dialog for you to copy manually.');
-      return;
-    }
-    setTimeout(()=>{ btn.textContent = originalLabel; }, 1800);
-  }
+  contributionModal.addEventListener('click', function(e){
+    if(e.target === contributionModal) contributionModal.style.display = 'none';
+  });
 
   let currentSite = 'college';
 
@@ -800,7 +760,6 @@
     }
 
     target.entry = pts.length ? { points: pts, connected: entryPlacementConnected, closed: entryPlacementConnected && closed } : null;
-    saveData();
     renderEntryMarkers();
     if(kind === 'building'){ renderBuildings(); } else { renderLandmarkList(); }
     populateDirectionSelects();
@@ -827,7 +786,6 @@
     const target = findEntryTarget(kind, id);
     if(!target || !target.entry) return;
     target.entry = null;
-    saveData();
     renderEntryMarkers();
     if(kind === 'building'){ renderBuildings(); } else { renderLandmarkList(); }
     populateDirectionSelects();
@@ -844,7 +802,6 @@
       if(target && target.entry){
         target.entry.connected = entryPlacementConnected;
         if(!entryPlacementConnected) target.entry.closed = false;
-        saveData();
         renderEntryMarkers();
       }
       setEntryPlacementStatus(target);
@@ -893,7 +850,6 @@
     const next = window.prompt('Floor label for "' + (target.name || 'this place') + '" (e.g. "Ground Floor", "1st Floor"). Leave blank to clear:', target.floor || '');
     if(next === null) return; // cancelled
     target.floor = next.trim() || null;
-    saveData();
     if(kind === 'building'){ renderBuildings(); } else { renderLandmarkList(); }
     populateDirectionSelects();
   }
@@ -974,15 +930,10 @@
           category: category,
           points: capturedPoints
         };
-        siteData.buildings.push(building);
-        if(linkedLandmark) linkedLandmark.resolved = true;
-        saveData();
-        renderBuildings();
-        renderLandmarks();
-        renderLandmarkList();
-        populateCategoryFilter();
-        populateDirectionSelects();
-        setStatus(name ? ('"' + name + '" saved. Draw another, or switch tools.') : 'Building saved. Draw another, or switch tools.');
+        const jsonSnippet = JSON.stringify(building, null, 2);
+        showContributionPreview('building', name || 'Unnamed Building', jsonSnippet, capturedSite);
+        if(linkedLandmark){ linkedLandmark.resolved = true; renderLandmarks(); renderLandmarkList(); }
+        setStatus(name ? '"' + name + '" ready to submit. Copy the JSON and create a PR.' : 'Building ready to submit.');
       },
       onCancel: function(){
         setStatus('Building discarded — the traced shape was not saved.');
@@ -1072,7 +1023,6 @@
   btnBuildingCancel.addEventListener('click', cancelBuildingDraw);
   btnBuildingFinish.addEventListener('click', finishBuilding);
   btnBuildingUndo.addEventListener('click', undoLastPoint);
-  document.getElementById('btnCopyJSON').addEventListener('click', copyJSON);
 
   // ================= EDIT MODE SWITCHING (Contribute menu) =================
   // Only one editing mode can be active at a time. Every mode-start function
@@ -1121,12 +1071,9 @@
           name: name, lat: latlng.lat, lng: latlng.lng,
           resolved: false, entry: null, category: category || null, floor: null
         };
-        siteData.landmarks.push(lm);
-        saveData();
-        renderLandmarks();
-        renderLandmarkList();
-        populateCategoryFilter();
-        setStatus('Landmark "' + name + '" added — trace it into a building anytime from Contribute → Trace Landmarks.');
+        const jsonSnippet = JSON.stringify(lm, null, 2);
+        showContributionPreview('landmark', name, jsonSnippet, currentSite);
+        setStatus('Landmark "' + name + '" ready to submit. Copy the JSON and create a PR.');
       },
       onCancel: function(){
         setStatus('Landmark placement cancelled.');
@@ -1228,13 +1175,10 @@
       site: currentSite,
       points: currentPathPoints.map(p => [p.lat, p.lng])
     };
-    siteData.paths.push(path);
-    saveData();
+    const jsonSnippet = JSON.stringify(path, null, 2);
     endPathEditUI();
-    renderPaths();
-    graphCache = {}; // the routing graph is built lazily from siteData.paths — drop the stale cache
-    populateDirectionSelects();
-    setStatus('Path segment saved. Trace another from Contribute → Edit Paths, or switch tools.');
+    showContributionPreview('path', name || 'Unnamed Path', jsonSnippet, currentSite);
+    setStatus('Path ready to submit. Copy the JSON and create a PR.');
   }
 
   function deletePath(pathId){
@@ -1242,7 +1186,6 @@
     if(!p) return;
     if(!window.confirm('Delete ' + (p.name || 'this path segment') + '?')) return;
     siteData.paths = siteData.paths.filter(pp => pp.id !== pathId);
-    saveData();
     renderPaths();
     graphCache = {};
     populateDirectionSelects();
@@ -1270,6 +1213,7 @@
 
   document.addEventListener('keydown', function(e){
     if(e.key === 'Escape'){
+      if(contributionModal.style.display === 'flex'){ btnCloseContribution.click(); return; }
       if(nameCategoryModal.style.display === 'flex'){ modalCancelBtn.click(); return; }
       if(placingNewLandmark){ cancelAddLandmark(); setStatus('Landmark placement cancelled.'); return; }
       if(selectingEntryTarget){ cancelSelectEntryTarget(); setStatus('Entry point editing cancelled.'); return; }
@@ -1532,7 +1476,6 @@
           const lm = siteData.landmarks.find(l => l.id === b.landmarkId);
           if(lm){ lm.resolved = false; renderLandmarks(); renderLandmarkList(); }
         }
-        saveData();
         populateCategoryFilter();
         renderBuildings();
         populateDirectionSelects();
@@ -2097,6 +2040,24 @@
 
   tabCollege.addEventListener('click', function(){ switchSite('college'); });
   tabHostel.addEventListener('click', function(){ switchSite('hostel'); });
+
+  // ================= SIDEBAR TABS =================
+  const sidebarTabs = document.querySelectorAll('.sidebar-tab');
+  const tabPanels = document.querySelectorAll('.tab-panel');
+
+  sidebarTabs.forEach(function(tab){
+    tab.addEventListener('click', function(){
+      const targetTab = tab.getAttribute('data-tab');
+      sidebarTabs.forEach(function(t){ t.classList.remove('active'); });
+      tab.classList.add('active');
+      tabPanels.forEach(function(panel){ panel.classList.remove('active'); });
+      if(targetTab === 'map'){
+        document.getElementById('mapPanel').classList.add('active');
+      } else {
+        document.getElementById('directionsPanel').classList.add('active');
+      }
+    });
+  });
 
   // ================= INIT =================
   // The panel is now always a pure view (Directions + Buildings); there's
