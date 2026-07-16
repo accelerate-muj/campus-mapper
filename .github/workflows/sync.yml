@@ -1,0 +1,43 @@
+name: Sync data and mapData.js
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/**'
+      - 'mapData.js'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Detect what changed
+        id: detect
+        run: |
+          DATA_CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep '^data/' | head -1)
+          JS_CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep '^mapData.js$' | head -1)
+          echo "data_changed=$([ -n \"$DATA_CHANGED\" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "js_changed=$([ -n \"$JS_CHANGED\" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      - name: Rebuild mapData.js from data/
+        if: steps.detect.outputs.data_changed == 'true'
+        run: node build.js
+
+      - name: Split mapData.js into data/
+        if: steps.detect.outputs.js_changed == 'true' && steps.detect.outputs.data_changed == 'false'
+        run: node parse.js
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add mapData.js data/
+          git diff --cached --quiet || git commit -m "Auto-sync: rebuild mapData.js from data/" && git push

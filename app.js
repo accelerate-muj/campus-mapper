@@ -258,12 +258,14 @@
   const btnOpenGitHub = document.getElementById('btnOpenGitHub');
   const btnCloseContribution = document.getElementById('btnCloseContribution');
 
-  function showContributionPreview(type, name, jsonSnippet, site){
+  function showContributionPreview(type, name, jsonSnippet, site, filePath){
     const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
     contributionTitle.textContent = 'Submit: New ' + typeLabel;
-    contributionDesc.textContent = 'Copy the JSON below and add it to the ' + type + 's array in mapData.js, then create a pull request.' + (site ? ' (Site: ' + site + ')' : '');
+    contributionDesc.textContent = 'Copy the JSON below and add it to ' + (filePath || ('the ' + type + 's array in data/')) + ', then create a pull request.' + (site ? ' (Site: ' + site + ')' : '');
     contributionJSON.textContent = jsonSnippet;
     contributionModal.style.display = 'flex';
+
+    const githubUrl = 'https://github.com/' + GITHUB_REPO + '/edit/' + GITHUB_BRANCH + '/' + (filePath || 'mapData.js');
 
     btnCopyContribution.textContent = '📋 Copy JSON';
     btnCopyContribution.onclick = function(){
@@ -278,7 +280,7 @@
     };
 
     btnOpenGitHub.onclick = function(){
-      window.open('https://github.com/' + GITHUB_REPO + '/edit/' + GITHUB_BRANCH + '/' + GITHUB_FILE_PATH, '_blank');
+      window.open(githubUrl, '_blank');
     };
 
     btnCloseContribution.onclick = function(){
@@ -931,7 +933,8 @@
           points: capturedPoints
         };
         const jsonSnippet = JSON.stringify(building, null, 2);
-        showContributionPreview('building', name || 'Unnamed Building', jsonSnippet, capturedSite);
+        const catId = category || 'other';
+        showContributionPreview('building', name || 'Unnamed Building', jsonSnippet, capturedSite, 'data/' + capturedSite + '/buildings/' + catId + '.json');
         if(linkedLandmark){ linkedLandmark.resolved = true; renderLandmarks(); renderLandmarkList(); }
         setStatus(name ? '"' + name + '" ready to submit. Copy the JSON and create a PR.' : 'Building ready to submit.');
       },
@@ -1072,7 +1075,7 @@
           resolved: false, entry: null, category: category || null, floor: null
         };
         const jsonSnippet = JSON.stringify(lm, null, 2);
-        showContributionPreview('landmark', name, jsonSnippet, currentSite);
+        showContributionPreview('landmark', name, jsonSnippet, currentSite, 'data/' + currentSite + '/landmarks.json');
         setStatus('Landmark "' + name + '" ready to submit. Copy the JSON and create a PR.');
       },
       onCancel: function(){
@@ -1177,7 +1180,7 @@
     };
     const jsonSnippet = JSON.stringify(path, null, 2);
     endPathEditUI();
-    showContributionPreview('path', name || 'Unnamed Path', jsonSnippet, currentSite);
+    showContributionPreview('path', name || 'Unnamed Path', jsonSnippet, currentSite, 'data/' + currentSite + '/paths.json');
     setStatus('Path ready to submit. Copy the JSON and create a PR.');
   }
 
