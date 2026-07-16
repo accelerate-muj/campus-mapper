@@ -243,13 +243,13 @@
     "floor": null
   },
   {
-    "id": "test_final",
-    "name": "Final Test",
-    "lat": 26.845,
-    "lng": 75.566,
+    "id": "lm_1784216254294a5d719450cba3",
+    "name": "Basketball Court",
+    "lat": 26.845704932549772,
+    "lng": 75.56639764287769,
     "resolved": false,
     "entry": null,
-    "category": "other",
+    "category": "sports",
     "floor": null
   }
 ]
