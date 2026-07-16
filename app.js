@@ -529,6 +529,16 @@
   function applyCompassLock(){
     const locked = !!(siteData.compass && siteData.compass.locked);
     const rotateControlEl = document.querySelector('.leaflet-control-rotate');
+
+    // leaflet-rotate builds its toggle with only a title attribute. A title is
+    // a last-resort accessible name: it is not surfaced on touch, and screen
+    // readers treat it inconsistently. We can't change the plugin, but we can
+    // label the element it produced.
+    const rotateToggle = document.querySelector('.leaflet-control-rotate-toggle');
+    if(rotateToggle && !rotateToggle.getAttribute('aria-label')){
+      rotateToggle.setAttribute('aria-label', rotateToggle.getAttribute('title') || 'Rotate map');
+    }
+
     if(locked){
       map.setBearing(siteData.compass.bearing);
       if(map.touchRotate) map.touchRotate.disable();
